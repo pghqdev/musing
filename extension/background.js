@@ -3,7 +3,7 @@
  * Handles quote caching, periodic sync, and communication with content scripts
  */
 
-const API_URL = "https://llm-quotes-api.YOUR_SUBDOMAIN.workers.dev"; // Update after deployment
+const API_URL = "https://musing-api.YOUR_SUBDOMAIN.workers.dev"; // Update after deployment
 const SYNC_INTERVAL_HOURS = 24;
 const MIN_CACHE_SIZE = 5;
 const DEFAULT_CACHE_SIZE = 15;

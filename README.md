@@ -50,14 +50,14 @@ wrangler secret put GROQ_API_KEY
 npm run deploy
 ```
 
-After deployment, note your Worker URL (e.g., `https://llm-quotes-api.your-subdomain.workers.dev`).
+After deployment, note your Worker URL (e.g., `https://musing-api.your-subdomain.workers.dev`).
 
 ### 2. Configure the Extension
 
 Edit `extension/background.js` and update `API_URL` with your Worker URL:
 
 ```js
-const API_URL = "https://llm-quotes-api.your-subdomain.workers.dev";
+const API_URL = "https://musing-api.your-subdomain.workers.dev";
 ```
 
 ### 3. Load the Extension

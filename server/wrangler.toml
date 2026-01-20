@@ -1,4 +1,4 @@
-name = "llm-quotes-api"
+name = "musing-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
@@ -7,5 +7,5 @@ compatibility_date = "2024-01-01"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "llm-quotes"
-database_id = "" # Fill after `wrangler d1 create llm-quotes`
+database_name = "musing"
+database_id = "" # Fill after `wrangler d1 create musing`

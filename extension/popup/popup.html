@@ -36,6 +36,41 @@
     .header-title {
       font-size: 1.125rem;
       font-weight: 600;
+      flex: 1;
+    }
+
+    .header-tabs {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 0.375rem 0.625rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      color: light-dark(#606060, #a0a0a0);
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      background: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.1));
+    }
+
+    .tab-btn.active {
+      background: light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.15));
+      color: light-dark(#202124, #e8eaed);
+      font-weight: 500;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
     }
 
     .section {
@@ -88,7 +123,7 @@
       border-color: #4a9eff;
     }
 
-    /* Toggle switch - compact */
+    /* Toggle switch */
     .toggle {
       position: relative;
       width: 40px;
@@ -169,6 +204,15 @@
       cursor: not-allowed;
     }
 
+    .btn-secondary {
+      background: light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.15));
+      color: light-dark(#202124, #e8eaed);
+    }
+
+    .btn-secondary:hover {
+      background: light-dark(rgba(0, 0, 0, 0.12), rgba(255, 255, 255, 0.2));
+    }
+
     .status {
       padding: 0.5rem 1rem;
       font-size: 0.75rem;
@@ -223,8 +267,8 @@
       text-decoration: underline;
     }
 
-    /* Privacy modal */
-    .privacy-modal {
+    /* Modal styles */
+    .modal {
       display: none;
       position: fixed;
       top: 0;
@@ -235,13 +279,13 @@
       z-index: 100;
     }
 
-    .privacy-modal.show {
+    .modal.show {
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    .privacy-modal-content {
+    .modal-content {
       background: light-dark(#fff, #2d2d30);
       border-radius: 8px;
       width: 320px;
@@ -251,7 +295,7 @@
       flex-direction: column;
     }
 
-    .privacy-modal-header {
+    .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -259,12 +303,12 @@
       border-bottom: 1px solid light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.1));
     }
 
-    .privacy-modal-header h3 {
+    .modal-header h3 {
       font-size: 0.875rem;
       font-weight: 600;
     }
 
-    .privacy-close {
+    .modal-close {
       background: none;
       border: none;
       font-size: 1.25rem;
@@ -275,30 +319,97 @@
       line-height: 1;
     }
 
-    .privacy-close:hover {
+    .modal-close:hover {
       opacity: 1;
     }
 
-    .privacy-modal-body {
+    .modal-body {
       padding: 1rem;
       overflow-y: auto;
       font-size: 0.75rem;
       line-height: 1.5;
     }
 
-    .privacy-modal-body h4 {
+    .modal-body h4 {
       font-size: 0.75rem;
       font-weight: 600;
       margin: 0.75rem 0 0.25rem;
     }
 
-    .privacy-modal-body h4:first-child {
+    .modal-body h4:first-child {
       margin-top: 0;
     }
 
-    .privacy-modal-body p {
+    .modal-body p {
       color: light-dark(#606060, #a0a0a0);
       margin: 0;
+    }
+
+    /* Logs tab styles */
+    .logs-empty {
+      font-size: 0.75rem;
+      color: light-dark(#808080, #707070);
+      text-align: center;
+      padding: 1rem 0;
+    }
+
+    .logs-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .log-item {
+      padding: 0.5rem;
+      border-radius: 4px;
+      background: light-dark(rgba(0, 0, 0, 0.03), rgba(255, 255, 255, 0.05));
+      margin-bottom: 0.5rem;
+      font-size: 0.7rem;
+    }
+
+    .log-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .log-source {
+      font-weight: 600;
+      color: #4a9eff;
+      margin-bottom: 0.25rem;
+    }
+
+    .log-time {
+      color: light-dark(#808080, #707070);
+      font-size: 0.65rem;
+    }
+
+    .log-preview {
+      color: light-dark(#606060, #a0a0a0);
+      margin-top: 0.25rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .quotes-count {
+      font-size: 0.8125rem;
+      color: light-dark(#606060, #a0a0a0);
+    }
+
+    .debug-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    /* Raw data modal */
+    .raw-data-pre {
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 0.65rem;
+      background: light-dark(#f5f5f5, #1a1a1a);
+      padding: 0.75rem;
+      border-radius: 4px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 300px;
     }
   </style>
 </head>
@@ -306,75 +417,105 @@
   <div class="header">
     <img src="../icons/icon48.png" alt="Musing">
     <span class="header-title">Musing</span>
-  </div>
-
-  <div class="section">
-    <div class="section-title">Sync</div>
-    <div class="sync-row">
-      <div>
-        <div class="sync-info">Last synced</div>
-        <div class="sync-time" id="last-sync">Never</div>
-      </div>
-      <button class="btn" id="sync-btn">Sync Now</button>
+    <div class="header-tabs">
+      <button class="tab-btn active" data-tab="settings">Settings</button>
+      <button class="tab-btn" data-tab="logs">Logs</button>
     </div>
   </div>
 
-  <div class="section">
-    <div class="section-title">Data Sources</div>
-    <div class="setting-row">
-      <div>
-        <div class="setting-label">Claude.ai</div>
-        <div class="setting-sublabel">Extract themes from conversations</div>
+  <!-- Settings Tab -->
+  <div class="tab-content active" id="tab-settings">
+    <div class="section">
+      <div class="section-title">Sync</div>
+      <div class="sync-row">
+        <div>
+          <div class="sync-info">Last synced</div>
+          <div class="sync-time" id="last-sync">Never</div>
+        </div>
+        <button class="btn" id="sync-btn">Sync Now</button>
       </div>
-      <label class="toggle">
-        <input type="checkbox" id="enable-claude" checked>
-        <span class="toggle-slider"></span>
-      </label>
     </div>
-    <div class="setting-row">
-      <div>
-        <div class="setting-label">ChatGPT</div>
-        <div class="setting-sublabel">Extract themes from conversations</div>
+
+    <div class="section">
+      <div class="section-title">Data Sources</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Claude.ai</div>
+          <div class="setting-sublabel">Extract themes from conversations</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="enable-claude" checked>
+          <span class="toggle-slider"></span>
+        </label>
       </div>
-      <label class="toggle">
-        <input type="checkbox" id="enable-chatgpt" checked>
-        <span class="toggle-slider"></span>
-      </label>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">ChatGPT</div>
+          <div class="setting-sublabel">Extract themes from conversations</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="enable-chatgpt" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Search</div>
+      <div class="setting-row">
+        <div class="setting-label">Search Engine</div>
+        <select id="search-engine">
+          <option value="google">Google</option>
+          <option value="duckduckgo">DuckDuckGo</option>
+          <option value="bing">Bing</option>
+          <option value="brave">Brave Search</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section privacy-section">
+      <div class="privacy-notice">
+        <svg class="privacy-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+          <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+        </svg>
+        Conversation themes are sent to our server to find relevant quotes.
+        <a href="#" id="privacy-link">Privacy Policy</a>
+      </div>
     </div>
   </div>
 
-  <div class="section">
-    <div class="section-title">Search</div>
-    <div class="setting-row">
-      <div class="setting-label">Search Engine</div>
-      <select id="search-engine">
-        <option value="google">Google</option>
-        <option value="duckduckgo">DuckDuckGo</option>
-        <option value="bing">Bing</option>
-        <option value="brave">Brave Search</option>
-      </select>
+  <!-- Logs Tab -->
+  <div class="tab-content" id="tab-logs">
+    <div class="section">
+      <div class="section-title">Scrape History</div>
+      <div class="logs-empty" id="logs-empty">No scrapes yet. Visit claude.ai or chatgpt.com to collect conversation data.</div>
+      <div class="logs-list" id="logs-list"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Cached Quotes</div>
+      <div class="quotes-count" id="quotes-count">0 quotes cached</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Debug</div>
+      <div class="debug-row">
+        <button class="btn btn-secondary" id="clear-logs-btn">Clear Data</button>
+        <button class="btn btn-secondary" id="view-raw-btn">View Raw</button>
+      </div>
     </div>
   </div>
 
   <div class="status" id="status">Saved</div>
 
-  <div class="section privacy-section">
-    <div class="privacy-notice">
-      <svg class="privacy-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
-      </svg>
-      Conversation themes are sent to our server to find relevant quotes.
-      <a href="#" id="privacy-link">Privacy Policy</a>
-    </div>
-  </div>
-
-  <div class="privacy-modal" id="privacy-modal">
-    <div class="privacy-modal-content">
-      <div class="privacy-modal-header">
+  <!-- Privacy Modal -->
+  <div class="modal" id="privacy-modal">
+    <div class="modal-content">
+      <div class="modal-header">
         <h3>Privacy Policy</h3>
-        <button class="privacy-close" id="privacy-close">&times;</button>
+        <button class="modal-close" id="privacy-close">&times;</button>
       </div>
-      <div class="privacy-modal-body">
+      <div class="modal-body">
         <h4>What We Collect</h4>
         <p>We extract themes from your AI conversations (Claude.ai, ChatGPT) to find relevant historical quotes. Only extracted themes are sent to our server, not full conversations.</p>
 
@@ -389,6 +530,19 @@
 
         <h4>Contact</h4>
         <p>Questions? Contact us at privacy@musing.app</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Raw Data Modal -->
+  <div class="modal" id="raw-data-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Raw Storage Data</h3>
+        <button class="modal-close" id="raw-data-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <pre class="raw-data-pre" id="raw-data-pre"></pre>
       </div>
     </div>
   </div>

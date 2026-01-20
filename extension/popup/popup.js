@@ -4,6 +4,9 @@
 
 const SETTINGS_KEY = "musing_settings";
 const LAST_SYNC_KEY = "last_sync_timestamp";
+const CONVERSATIONS_KEY = "recent_conversations";
+const QUOTES_KEY = "cached_quotes";
+const SCRAPE_LOG_KEY = "scrape_log";
 
 const DEFAULTS = {
   searchEngine: "google",
@@ -11,6 +14,7 @@ const DEFAULTS = {
   enableChatGPT: true,
 };
 
+// Settings tab elements
 const searchEngineEl = document.getElementById("search-engine");
 const enableClaudeEl = document.getElementById("enable-claude");
 const enableChatGPTEl = document.getElementById("enable-chatgpt");
@@ -20,6 +24,20 @@ const syncBtnEl = document.getElementById("sync-btn");
 const privacyLinkEl = document.getElementById("privacy-link");
 const privacyModalEl = document.getElementById("privacy-modal");
 const privacyCloseEl = document.getElementById("privacy-close");
+
+// Logs tab elements
+const logsEmptyEl = document.getElementById("logs-empty");
+const logsListEl = document.getElementById("logs-list");
+const quotesCountEl = document.getElementById("quotes-count");
+const clearLogsBtnEl = document.getElementById("clear-logs-btn");
+const viewRawBtnEl = document.getElementById("view-raw-btn");
+const rawDataModalEl = document.getElementById("raw-data-modal");
+const rawDataCloseEl = document.getElementById("raw-data-close");
+const rawDataPreEl = document.getElementById("raw-data-pre");
+
+// Tab elements
+const tabBtns = document.querySelectorAll(".tab-btn");
+const tabContents = document.querySelectorAll(".tab-content");
 
 /**
  * Load settings from storage
@@ -43,7 +61,7 @@ async function saveSettings() {
   };
 
   await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
-  showStatus();
+  showStatus("Saved", "success");
 }
 
 /**
@@ -131,7 +149,106 @@ function hidePrivacyModal() {
   privacyModalEl.classList.remove("show");
 }
 
-// Event listeners
+/**
+ * Switch tabs
+ */
+function switchTab(tabName) {
+  tabBtns.forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.tab === tabName);
+  });
+
+  tabContents.forEach((content) => {
+    content.classList.toggle("active", content.id === `tab-${tabName}`);
+  });
+
+  // Load logs data when switching to logs tab
+  if (tabName === "logs") {
+    loadLogs();
+  }
+}
+
+/**
+ * Load and display scrape logs
+ */
+async function loadLogs() {
+  const data = await chrome.storage.local.get([SCRAPE_LOG_KEY, CONVERSATIONS_KEY, QUOTES_KEY]);
+  const logs = data[SCRAPE_LOG_KEY] || [];
+  const conversations = data[CONVERSATIONS_KEY] || [];
+  const quotes = data[QUOTES_KEY] || [];
+
+  // Update quotes count
+  quotesCountEl.textContent = `${quotes.length} quotes cached`;
+
+  // If no scrape logs but we have conversations, show them instead
+  const displayData = logs.length > 0 ? logs : conversations.map((text, i) => ({
+    source: "unknown",
+    timestamp: Date.now() - (i * 60000),
+    preview: text.slice(0, 100),
+    length: text.length,
+  }));
+
+  if (displayData.length === 0) {
+    logsEmptyEl.style.display = "block";
+    logsListEl.innerHTML = "";
+    return;
+  }
+
+  logsEmptyEl.style.display = "none";
+
+  logsListEl.innerHTML = displayData.map((log) => {
+    const time = new Date(log.timestamp).toLocaleString();
+    const source = log.source === "claude" ? "Claude.ai" :
+                   log.source === "chatgpt" ? "ChatGPT" : "Unknown";
+    const preview = log.preview || (typeof log === "string" ? log.slice(0, 100) : "");
+
+    return `
+      <div class="log-item">
+        <div class="log-source">${source} <span class="log-time">${time}</span></div>
+        <div class="log-preview">${escapeHtml(preview)}${log.length > 100 ? "..." : ""}</div>
+      </div>
+    `;
+  }).join("");
+}
+
+/**
+ * Escape HTML entities
+ */
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/**
+ * Clear all scrape data
+ */
+async function handleClearLogs() {
+  if (!confirm("Clear all scraped conversation data and cached quotes?")) {
+    return;
+  }
+
+  await chrome.storage.local.remove([SCRAPE_LOG_KEY, CONVERSATIONS_KEY, QUOTES_KEY]);
+  showStatus("Data cleared", "success");
+  loadLogs();
+}
+
+/**
+ * Show raw storage data
+ */
+async function handleViewRaw() {
+  const data = await chrome.storage.local.get(null);
+  rawDataPreEl.textContent = JSON.stringify(data, null, 2);
+  rawDataModalEl.classList.add("show");
+}
+
+/**
+ * Hide raw data modal
+ */
+function hideRawDataModal() {
+  rawDataModalEl.classList.remove("show");
+}
+
+// Event listeners - Settings
 searchEngineEl.addEventListener("change", saveSettings);
 enableClaudeEl.addEventListener("change", saveSettings);
 enableChatGPTEl.addEventListener("change", saveSettings);
@@ -140,6 +257,19 @@ privacyLinkEl.addEventListener("click", showPrivacyModal);
 privacyCloseEl.addEventListener("click", hidePrivacyModal);
 privacyModalEl.addEventListener("click", (e) => {
   if (e.target === privacyModalEl) hidePrivacyModal();
+});
+
+// Event listeners - Tabs
+tabBtns.forEach((btn) => {
+  btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+});
+
+// Event listeners - Logs
+clearLogsBtnEl.addEventListener("click", handleClearLogs);
+viewRawBtnEl.addEventListener("click", handleViewRaw);
+rawDataCloseEl.addEventListener("click", hideRawDataModal);
+rawDataModalEl.addEventListener("click", (e) => {
+  if (e.target === rawDataModalEl) hideRawDataModal();
 });
 
 // Load on popup open

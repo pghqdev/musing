@@ -12,16 +12,32 @@
   const SEARCH_URLS = {
     google: "https://www.google.com/search?q=",
     duckduckgo: "https://duckduckgo.com/?q=",
-    bing: "https://www.bing.com/search?q=",
-    brave: "https://search.brave.com/search?q=",
+    perplexity: "https://www.perplexity.ai/search?q=",
+    chatgpt: "https://chatgpt.com/?q=",
+    claude: "https://claude.ai/new?q=",
+    gemini: "https://gemini.google.com/app?q=",
   };
 
   const ENGINE_NAMES = {
     google: "Google",
     duckduckgo: "DuckDuckGo",
-    bing: "Bing",
-    brave: "Brave",
+    perplexity: "Perplexity",
+    chatgpt: "ChatGPT",
+    claude: "Claude",
+    gemini: "Gemini",
   };
+
+  const ENGINE_ICONS = {
+    google: "https://www.google.com/favicon.ico",
+    duckduckgo: "https://duckduckgo.com/favicon.ico",
+    perplexity: "https://www.google.com/s2/favicons?domain=perplexity.ai&sz=32",
+    chatgpt: "https://chatgpt.com/favicon.ico",
+    claude: "https://claude.ai/favicon.ico",
+    gemini: "https://www.google.com/s2/favicons?domain=gemini.google.com&sz=32",
+  };
+
+  const SEARCH_ENGINES = ["google", "duckduckgo", "perplexity"];
+  const AI_PLATFORMS = ["chatgpt", "claude", "gemini"];
 
   // Local fallback quotes (used when service worker is unavailable)
   const LOCAL_FALLBACKS = [
@@ -38,9 +54,13 @@
   const searchEl = document.getElementById("search");
   const refreshEl = document.getElementById("refresh");
   const loadingEl = document.getElementById("loading-indicator");
+  const engineSelectorEl = document.getElementById("engine-selector");
+  const engineIconEl = document.getElementById("engine-icon");
+  const engineDropdownEl = document.getElementById("engine-dropdown");
 
   let searchEngine = "google";
   let isInitialized = false;
+  let dropdownOpen = false;
 
   /**
    * Show loading state
@@ -163,12 +183,108 @@
   }
 
   /**
+   * Update engine icon in selector
+   */
+  function updateEngineIcon() {
+    engineIconEl.src = ENGINE_ICONS[searchEngine] || ENGINE_ICONS.google;
+    engineIconEl.alt = ENGINE_NAMES[searchEngine] || "Google";
+  }
+
+  /**
+   * Render dropdown options
+   */
+  function renderDropdown() {
+    const createOption = (key) => {
+      const option = document.createElement("div");
+      option.className = `engine-option${searchEngine === key ? " selected" : ""}`;
+      option.dataset.engine = key;
+      option.innerHTML = `
+        <img class="engine-option-icon" src="${ENGINE_ICONS[key]}" alt="">
+        <span class="engine-option-name">${ENGINE_NAMES[key]}</span>
+        <svg class="engine-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      `;
+      option.addEventListener("click", () => selectEngine(key));
+      return option;
+    };
+
+    engineDropdownEl.innerHTML = "";
+
+    // Search engines section
+    const searchLabel = document.createElement("div");
+    searchLabel.className = "engine-section-label";
+    searchLabel.textContent = "Search";
+    engineDropdownEl.appendChild(searchLabel);
+
+    SEARCH_ENGINES.forEach((key) => {
+      engineDropdownEl.appendChild(createOption(key));
+    });
+
+    // Divider
+    const divider = document.createElement("div");
+    divider.className = "engine-divider";
+    engineDropdownEl.appendChild(divider);
+
+    // AI platforms section
+    const aiLabel = document.createElement("div");
+    aiLabel.className = "engine-section-label";
+    aiLabel.textContent = "AI";
+    engineDropdownEl.appendChild(aiLabel);
+
+    AI_PLATFORMS.forEach((key) => {
+      engineDropdownEl.appendChild(createOption(key));
+    });
+  }
+
+  /**
+   * Toggle dropdown open/close
+   */
+  function toggleDropdown() {
+    dropdownOpen = !dropdownOpen;
+    engineDropdownEl.classList.toggle("open", dropdownOpen);
+    engineSelectorEl.classList.toggle("open", dropdownOpen);
+  }
+
+  /**
+   * Close dropdown
+   */
+  function closeDropdown() {
+    if (dropdownOpen) {
+      dropdownOpen = false;
+      engineDropdownEl.classList.remove("open");
+      engineSelectorEl.classList.remove("open");
+    }
+  }
+
+  /**
+   * Select a search engine
+   */
+  async function selectEngine(key) {
+    if (searchEngine !== key) {
+      searchEngine = key;
+      updateSearchPlaceholder();
+      updateEngineIcon();
+      renderDropdown();
+
+      // Save preference
+      const { [SETTINGS_KEY]: settings = {} } = await chrome.storage.local.get(SETTINGS_KEY);
+      settings.searchEngine = key;
+      await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
+    }
+    closeDropdown();
+    searchEl.focus();
+  }
+
+  /**
    * Load settings
    */
   async function loadSettings() {
     const { [SETTINGS_KEY]: settings = {} } = await chrome.storage.local.get(SETTINGS_KEY);
     searchEngine = settings.searchEngine || "google";
     updateSearchPlaceholder();
+    updateEngineIcon();
+    renderDropdown();
   }
 
   /**
@@ -188,6 +304,8 @@
         if (newSettings.searchEngine && newSettings.searchEngine !== searchEngine) {
           searchEngine = newSettings.searchEngine;
           updateSearchPlaceholder();
+          updateEngineIcon();
+          renderDropdown();
           console.log("[Musing] Search engine updated to:", searchEngine);
         }
       }
@@ -227,6 +345,22 @@
   searchEl.addEventListener("keydown", handleSearch);
   refreshEl.addEventListener("click", handleRefresh);
   document.addEventListener("visibilitychange", handleVisibilityChange);
+  engineSelectorEl.addEventListener("click", toggleDropdown);
+
+  // Close dropdown when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!engineSelectorEl.contains(e.target) && !engineDropdownEl.contains(e.target)) {
+      closeDropdown();
+    }
+  });
+
+  // Close dropdown on escape
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && dropdownOpen) {
+      closeDropdown();
+      searchEl.focus();
+    }
+  });
 
   // ============ Onboarding ============
 

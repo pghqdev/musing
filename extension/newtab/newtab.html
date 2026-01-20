@@ -167,28 +167,169 @@
     .search-container {
       margin-top: 3rem;
       width: 500px;
+      position: relative;
     }
 
-    .search-input {
-      width: 100%;
-      padding: 0.75rem 1.25rem;
-      font-size: 1rem;
-      border: 1px solid light-dark(#dfe1e5, #5f6368);
+    .search-wrapper {
+      display: flex;
+      align-items: center;
+      border: 1px solid light-dark(#dfe1e5, #3c4043);
       border-radius: 24px;
-      background: light-dark(#fff, rgba(255, 255, 255, 0.05));
-      color: inherit;
-      outline: none;
+      background: light-dark(#fff, rgba(255, 255, 255, 0.08));
       transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
     }
 
-    .search-input:focus {
-      border-color: light-dark(#4a9eff, #8ab4f8);
-      background: light-dark(#fff, rgba(255, 255, 255, 0.1));
-      box-shadow: light-dark(0 1px 6px rgba(32, 33, 36, 0.28), none);
+    .search-wrapper:focus-within {
+      border-color: light-dark(#dfe1e5, #5f6368);
+      background: light-dark(#fff, rgba(255, 255, 255, 0.12));
+      box-shadow: light-dark(0 1px 6px rgba(32, 33, 36, 0.28), 0 1px 6px rgba(0, 0, 0, 0.3));
+    }
+
+    .engine-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0 0.375rem 0 0.875rem;
+      height: 100%;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: inherit;
+      transition: opacity 0.15s;
+      outline: none;
+      box-shadow: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .engine-selector:hover {
+      opacity: 0.8;
+    }
+
+    .engine-selector:focus,
+    .engine-selector:focus-visible {
+      outline: none;
+      box-shadow: none;
+    }
+
+    .engine-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 2px;
+    }
+
+    .dropdown-arrow {
+      width: 12px;
+      height: 12px;
+      color: light-dark(#5f6368, #9aa0a6);
+      transition: transform 0.15s;
+    }
+
+    .engine-selector.open .dropdown-arrow {
+      transform: rotate(180deg);
+    }
+
+    .engine-separator {
+      width: 1px;
+      height: 20px;
+      background: light-dark(#dadce0, #5f6368);
+      margin: 0 0.25rem;
+    }
+
+    .search-input {
+      flex: 1;
+      padding: 0.75rem 1.25rem 0.75rem 0.625rem;
+      font-size: 1rem;
+      border: none;
+      background: transparent;
+      color: inherit;
+      outline: none;
     }
 
     .search-input::placeholder {
       color: light-dark(#9aa0a6, #9aa0a6);
+    }
+
+    /* Engine dropdown */
+    .engine-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      background: light-dark(#fff, #292a2d);
+      border: 1px solid light-dark(#dfe1e5, #3c4043);
+      border-radius: 8px;
+      box-shadow: light-dark(0 4px 16px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.5));
+      padding: 0.5rem 0;
+      min-width: 180px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-8px);
+      transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
+      z-index: 100;
+    }
+
+    .engine-dropdown.open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .engine-option {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      padding: 0.5rem 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 0.8125rem;
+    }
+
+    .engine-option:hover {
+      background: light-dark(rgba(0, 0, 0, 0.04), rgba(255, 255, 255, 0.08));
+    }
+
+    .engine-option.selected {
+      background: light-dark(rgba(74, 158, 255, 0.1), rgba(138, 180, 248, 0.15));
+    }
+
+    .engine-option-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 3px;
+    }
+
+    .engine-option-name {
+      flex: 1;
+      text-align: start;
+      color: light-dark(#202124, #e8eaed);
+    }
+
+    .engine-option-check {
+      width: 14px;
+      height: 14px;
+      color: light-dark(#1a73e8, #8ab4f8);
+      opacity: 0;
+    }
+
+    .engine-option.selected .engine-option-check {
+      opacity: 1;
+    }
+
+    .engine-divider {
+      height: 1px;
+      background: light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.08));
+      margin: 0.375rem 0.75rem;
+    }
+
+    .engine-section-label {
+      padding: 0.5rem 0.75rem 0.25rem;
+      font-size: 0.65rem;
+      color: light-dark(#5f6368, #9aa0a6);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      text-align: left;
     }
 
     /* Onboarding overlay */
@@ -399,13 +540,25 @@
     </div>
 
     <div class="search-container">
-      <input
-        type="text"
-        class="search-input"
-        id="search"
-        placeholder="Search Google..."
-        autofocus
-      >
+      <div class="search-wrapper">
+        <button class="engine-selector" id="engine-selector">
+          <img class="engine-icon" id="engine-icon" src="" alt="">
+          <svg class="dropdown-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+        <div class="engine-separator"></div>
+        <input
+          type="text"
+          class="search-input"
+          id="search"
+          placeholder="Search Google..."
+          autofocus
+        >
+      </div>
+      <div class="engine-dropdown" id="engine-dropdown">
+        <!-- Engine options rendered by JS -->
+      </div>
     </div>
   </div>
 
@@ -424,14 +577,14 @@
       <!-- Step 1: Welcome -->
       <div class="onboarding-step active" data-step="1">
         <div class="onboarding-icon">✨</div>
-        <h2 class="onboarding-title">Welcome to Musing</h2>
+        <h2 class="onboarding-title">welcome to musing</h2>
         <p class="onboarding-text">
-          Your new tab now shows inspiring quotes from history's greatest thinkers,
+          your new tab now shows inspiring quotes from history's greatest thinkers,
           tailored to your AI conversations.
         </p>
         <div class="onboarding-tip">
-          <strong>How it works:</strong> As you chat with Claude or ChatGPT,
-          Musing learns your interests and shows relevant quotes here.
+          <strong>how it works:</strong> as you chat with Claude or ChatGPT,
+          musing learns your interests and shows relevant quotes here.
         </div>
         <div class="onboarding-buttons">
           <button class="onboarding-btn onboarding-btn-secondary" id="onboarding-skip">Skip</button>
@@ -446,9 +599,9 @@
 
       <!-- Step 2: Hide Chrome footer -->
       <div class="onboarding-step" data-step="2">
-        <h2 class="onboarding-title">Clean Up Your View</h2>
+        <h2 class="onboarding-title">clean up your view</h2>
         <p class="onboarding-text">
-          For a cleaner experience, hide Chrome's default shortcuts bar.
+          for a cleaner experience, hide Chrome's default shortcuts bar.
         </p>
         <div class="onboarding-instructions">
           <div class="instruction-step">
@@ -480,17 +633,17 @@
       <!-- Step 3: Finish -->
       <div class="onboarding-step" data-step="3">
         <div class="onboarding-icon">🎉</div>
-        <h2 class="onboarding-title">You're All Set!</h2>
+        <h2 class="onboarding-title">you're all set!</h2>
         <p class="onboarding-text">
-          Start chatting with Claude or ChatGPT, and watch your quotes become
+          start chatting with Claude or ChatGPT, and watch your quotes become
           more personalized over time.
         </p>
         <div class="onboarding-tip">
-          <strong>Settings:</strong> Click the Musing extension icon in your
+          <strong>settings:</strong> click the musing extension icon in your
           toolbar to adjust settings or sync manually.
         </div>
         <div class="onboarding-buttons">
-          <button class="onboarding-btn onboarding-btn-primary" id="onboarding-finish">Get Started</button>
+          <button class="onboarding-btn onboarding-btn-primary" id="onboarding-finish">get started</button>
         </div>
         <div class="onboarding-dots">
           <div class="onboarding-dot"></div>

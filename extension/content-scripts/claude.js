@@ -119,7 +119,9 @@
       }
     }
 
-    const combined = messages.join("\n\n").slice(0, MAX_TEXT_LENGTH);
+    // Only use first 10 messages for context
+    const limited = messages.slice(0, 10);
+    const combined = limited.join("\n\n").slice(0, MAX_TEXT_LENGTH);
     return sanitizeText(combined);
   }
 
@@ -254,6 +256,13 @@
    * Observe DOM changes for new messages
    */
   function observeChanges() {
+    // Ensure document.body exists before observing
+    if (!document.body) {
+      console.log("[Musing] document.body not ready, retrying...");
+      setTimeout(observeChanges, 100);
+      return;
+    }
+
     observer = new MutationObserver((mutations) => {
       // Debounce: only scrape if significant changes
       const hasNewContent = mutations.some(

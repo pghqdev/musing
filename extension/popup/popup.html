@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Musing</title>
+  <title>musing</title>
   <style>
     * {
       margin: 0;
@@ -415,12 +415,12 @@
 </head>
 <body>
   <div class="header">
-    <img src="../icons/icon48.png" alt="Musing">
-    <span class="header-title">Musing</span>
-    <div class="header-tabs">
+    <img src="../icons/icon48.png" alt="musing">
+    <span class="header-title">musing</span>
+    <!-- <div class="header-tabs">
       <button class="tab-btn active" data-tab="settings">Settings</button>
       <button class="tab-btn" data-tab="logs">Logs</button>
-    </div>
+    </div> -->
   </div>
 
   <!-- Settings Tab -->
@@ -477,8 +477,10 @@
         <select id="search-engine">
           <option value="google">Google</option>
           <option value="duckduckgo">DuckDuckGo</option>
-          <option value="bing">Bing</option>
-          <option value="brave">Brave Search</option>
+          <option value="perplexity">Perplexity</option>
+          <option value="chatgpt">ChatGPT</option>
+          <option value="claude">Claude</option>
+          <option value="gemini">Gemini</option>
         </select>
       </div>
     </div>
@@ -488,7 +490,7 @@
         <svg class="privacy-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
           <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
         </svg>
-        Conversation themes are sent to our server to find relevant quotes.
+        conversation themes are sent to our server to find relevant quotes.
         <a href="#" id="privacy-link">Privacy Policy</a>
       </div>
     </div>
@@ -522,24 +524,24 @@
   <div class="modal" id="privacy-modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h3>Privacy Policy</h3>
+        <h3>privacy policy</h3>
         <button class="modal-close" id="privacy-close">&times;</button>
       </div>
       <div class="modal-body">
-        <h4>What We Collect</h4>
-        <p>We extract themes from your AI conversations (Claude.ai, ChatGPT) to find relevant historical quotes. Only extracted themes are sent to our server, not full conversations.</p>
+        <h4>what we collect</h4>
+        <p>we extract themes from your AI conversations (Claude.ai, ChatGPT) to find relevant historical quotes. only extracted 10 items are sent to our server, not full conversations.</p>
 
-        <h4>How It's Used</h4>
-        <p>Themes are used solely to query our quote database and return relevant quotes. We do not use your data for training, advertising, or any other purpose.</p>
+        <h4>how it's used</h4>
+        <p>themes are used solely to query our quote database and return relevant quotes. we do not use your data for training, advertising, or any other purpose.</p>
 
-        <h4>Data Storage</h4>
-        <p>Conversation snippets are stored locally on your device. Theme data sent to our server is not permanently stored and is discarded after processing.</p>
+        <h4>data storage</h4>
+        <p>conversation snippets are stored locally on your device. theme data sent to our server is not permanently stored and is discarded after processing.</p>
 
-        <h4>Your Rights</h4>
-        <p>You can disable data collection at any time using the toggles above. To delete all local data, remove the extension from Chrome.</p>
+        <h4>your rights</h4>
+        <p>you can disable data collection at any time using the toggles above. to delete all local data, remove the extension from Chrome.</p>
 
-        <h4>Contact</h4>
-        <p>Questions? Contact us at privacy@musing.app</p>
+        <h4>contact</h4>
+        <p>questions? contact us at privacy@musing.app</p>
       </div>
     </div>
   </div>

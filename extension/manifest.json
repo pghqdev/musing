@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Musing",
+  "name": "musing",
   "version": "1.0.0",
   "description": "let the wisdom of the past guide your present...",
   "minimum_chrome_version": "110",
@@ -60,7 +60,7 @@
       "32": "icons/icon32.png",
       "48": "icons/icon48.png"
     },
-    "default_title": "Musing",
+    "default_title": "musing",
     "default_popup": "popup/popup.html"
   }
 }

@@ -125,7 +125,9 @@
       }
     }
 
-    const combined = messages.join("\n\n").slice(0, MAX_TEXT_LENGTH);
+    // Only use first 10 messages for context
+    const limited = messages.slice(0, 10);
+    const combined = limited.join("\n\n").slice(0, MAX_TEXT_LENGTH);
     return sanitizeText(combined);
   }
 

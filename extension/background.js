@@ -3,7 +3,7 @@
  * Handles quote caching, periodic sync, and communication with content scripts
  */
 
-const API_URL = "https://musing-api.minimalistprojects.com";
+const API_URL = "https://api.musing.wiki";
 const SYNC_INTERVAL_HOURS = 24;
 const MIN_CACHE_SIZE = 5;
 const DEFAULT_CACHE_SIZE = 15;

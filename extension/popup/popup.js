@@ -126,6 +126,8 @@ async function handleSync() {
 
     if (response && response.error) {
       showStatus(response.error, "error");
+    } else if (response && response.skipped) {
+      showStatus("Already synced recently", "success");
     } else {
       showStatus("Synced successfully", "success");
     }

@@ -1,0 +1,19 @@
+{
+  "name": "llm-quotes-api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create llm-quotes",
+    "db:init": "wrangler d1 execute llm-quotes --file=./schema.sql",
+    "db:seed": "wrangler d1 execute llm-quotes --file=./seed.sql",
+    "db:init:local": "wrangler d1 execute llm-quotes --local --file=./schema.sql",
+    "db:seed:local": "wrangler d1 execute llm-quotes --local --file=./seed.sql"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240117.0",
+    "typescript": "^5.3.3",
+    "wrangler": "^3.24.0"
+  }
+}

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Tab</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #e8e8e8;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 700px;
+      text-align: center;
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .quote {
+      font-size: 1.75rem;
+      line-height: 1.6;
+      font-weight: 400;
+      margin-bottom: 1.5rem;
+      font-style: italic;
+      color: #f0f0f0;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .quote::before {
+      content: '"';
+      font-size: 3rem;
+      color: #4a9eff;
+      line-height: 0;
+      vertical-align: -0.4em;
+      margin-right: 0.1em;
+    }
+
+    .quote::after {
+      content: '"';
+      font-size: 3rem;
+      color: #4a9eff;
+      line-height: 0;
+      vertical-align: -0.4em;
+      margin-left: 0.1em;
+    }
+
+    .author {
+      font-size: 1.1rem;
+      color: #a0a0a0;
+      font-style: normal;
+      letter-spacing: 0.05em;
+    }
+
+    .author::before {
+      content: '— ';
+    }
+
+    .footer {
+      position: fixed;
+      bottom: 1.5rem;
+      font-size: 0.75rem;
+      color: #606060;
+    }
+
+    .footer a {
+      color: #4a9eff;
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Loading state */
+    .loading .quote,
+    .loading .author {
+      opacity: 0.3;
+    }
+
+    /* Search bar (optional, minimal) */
+    .search-container {
+      margin-top: 3rem;
+    }
+
+    .search-input {
+      width: 100%;
+      max-width: 500px;
+      padding: 0.75rem 1.25rem;
+      font-size: 1rem;
+      border: 1px solid #333;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #e8e8e8;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: #4a9eff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .search-input::placeholder {
+      color: #707070;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="container">
+    <p class="quote" id="quote">Loading wisdom...</p>
+    <p class="author" id="author"></p>
+
+    <div class="search-container">
+      <input 
+        type="text" 
+        class="search-input" 
+        id="search" 
+        placeholder="Search Google..." 
+        autofocus
+      >
+    </div>
+  </div>
+
+  <div class="footer">
+    Wisdom from your AI conversations · <a href="#" id="refresh">New quote</a>
+  </div>
+
+  <script src="newtab.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+name = "musing-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "musing"
+database_id = "67086f1f-b526-4423-b4cb-69a943cb3216"
+
+[observability]
+[observability.logs]
+enabled = true
+invocation_logs = true

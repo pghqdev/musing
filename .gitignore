@@ -1,0 +1,10 @@
+*.env
+*node_modules*
+*.DS_Store
+server/node_modules
+extension/node_modules
+*.log
+.wrangler/
+*.zip
+
+dist/

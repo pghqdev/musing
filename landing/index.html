@@ -406,26 +406,154 @@
       border-top: 1px solid var(--bg-tertiary);
     }
 
+    .footer-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .footer-brand img {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+    }
+
+    .footer-brand span {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
     .footer-links {
       display: flex;
-      justify-content: center;
-      gap: 32px;
-      margin-bottom: 24px;
+      align-items: center;
+      gap: 24px;
     }
 
     .footer-links a {
       color: var(--text-secondary);
       text-decoration: none;
       transition: color var(--transition);
+      font-size: 0.9rem;
     }
 
     .footer-links a:hover {
       color: var(--accent);
     }
 
+    .footer-social {
+      display: flex;
+      gap: 12px;
+    }
+
+    .footer-social a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      background: var(--bg-secondary);
+      transition: background var(--transition), color var(--transition);
+    }
+
+    .footer-social a:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .footer-social svg {
+      width: 18px;
+      height: 18px;
+    }
+
     .copyright {
       color: var(--text-secondary);
+      font-size: 0.85rem;
+      margin-top: 32px;
+    }
+
+    /* Privacy Modal */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--bg-secondary);
+      border-radius: var(--radius);
+      max-width: 500px;
+      width: 90%;
+      max-height: 80vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--bg-tertiary);
+    }
+
+    .modal-header h3 {
+      font-size: 1.1rem;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text-secondary);
+      padding: 0;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+    }
+
+    .modal-body h4 {
+      font-size: 0.95rem;
+      margin: 20px 0 8px;
+    }
+
+    .modal-body h4:first-child {
+      margin-top: 0;
+    }
+
+    .modal-body p {
+      color: var(--text-secondary);
       font-size: 0.9rem;
+      line-height: 1.6;
     }
 
     /* Animations */
@@ -497,9 +625,21 @@
         align-items: center;
       }
 
-      .footer-links {
+      .footer-content {
         flex-direction: column;
-        gap: 16px;
+        gap: 24px;
+      }
+
+      .footer-links {
+        order: 1;
+      }
+
+      .footer-social {
+        order: 2;
+      }
+
+      .footer-brand {
+        order: 0;
       }
     }
 
@@ -529,7 +669,7 @@
 </head>
 <body>
   <!-- Hero Section -->
-  <section class="hero">
+  <section id="hero" class="hero">
     <div class="hero-content">
       <div class="logo"><img src="icons/icon48.png" alt="musing icon">musing</div>
       <h1 class="tagline">let the wisdom of the past guide your present</h1>
@@ -548,7 +688,7 @@
   </section>
 
   <!-- How It Works -->
-  <section class="how-it-works">
+  <section id="how-it-works" class="how-it-works">
     <div class="container">
       <h2 class="section-title">How It Works</h2>
       <p class="section-subtitle">Musing learns from your AI conversations locally — nothing ever leaves your browser</p>
@@ -584,7 +724,7 @@
   </section>
 
   <!-- Features -->
-  <section class="features">
+  <section id="features" class="features">
     <div class="container">
       <h2 class="section-title">Beautiful & Thoughtful</h2>
       <p class="section-subtitle">Every detail designed to bring calm and inspiration to your browsing</p>
@@ -624,7 +764,7 @@
   </section>
 
   <!-- Privacy -->
-  <section class="privacy">
+  <section id="privacy" class="privacy">
     <div class="container">
       <div class="privacy-content">
         <h2 class="section-title">100% Local & Private</h2>
@@ -662,12 +802,57 @@
 
   <!-- Footer -->
   <footer>
-    <div class="footer-links">
-      <a href="#">Privacy Policy</a>
-      <a href="#">GitHub</a>
+    <div class="footer-content">
+      <div class="footer-brand">
+        <img src="icons/icon48.png" alt="musing">
+        <span>musing</span>
+      </div>
+      <div class="footer-links">
+        <a href="#" id="privacy-link">Privacy</a>
+      </div>
+      <div class="footer-social">
+        <a href="https://musing.wiki" target="_blank" title="Website">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+          </svg>
+        </a>
+        <a href="https://x.com/pghqdev" target="_blank" title="X (Twitter)">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        </a>
+      </div>
     </div>
-    <p class="copyright">&copy; 2025 Musing. Made with quiet contemplation.</p>
+    <p class="copyright">&copy; 2026 Musing. Built in Japan with quiet contemplation.</p>
   </footer>
+
+  <!-- Privacy Modal -->
+  <div class="modal" id="privacy-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Privacy Policy</h3>
+        <button class="modal-close" id="privacy-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <h4>100% Local Processing</h4>
+        <p>Musing runs entirely on your device. No data is ever sent to external servers. Theme extraction and quote matching happen locally in your browser.</p>
+
+        <h4>What We Collect</h4>
+        <p>We extract themes from your AI conversations to find relevant historical quotes. All processing happens locally — your conversations never leave your device.</p>
+
+        <h4>Data Storage</h4>
+        <p>Conversation snippets and extracted themes are stored only in your browser's local storage. Nothing is transmitted externally.</p>
+
+        <h4>Your Control</h4>
+        <p>Disable data collection anytime using the extension settings. Clear all data via the extension popup, or remove the extension to delete everything.</p>
+
+        <h4>Have Feedback?</h4>
+        <p>We'd love to hear from you. Contact us at hello@musing.wiki</p>
+      </div>
+    </div>
+  </div>
 
   <script>
     // Rotating quotes for the hero section
@@ -769,6 +954,32 @@
     // Add CSS transitions for quote text
     quoteText.style.transition = 'opacity 0.3s ease';
     quoteAuthor.style.transition = 'opacity 0.3s ease';
+
+    // Privacy modal
+    const privacyLink = document.getElementById('privacy-link');
+    const privacyModal = document.getElementById('privacy-modal');
+    const privacyClose = document.getElementById('privacy-close');
+
+    privacyLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      privacyModal.classList.add('show');
+    });
+
+    privacyClose.addEventListener('click', () => {
+      privacyModal.classList.remove('show');
+    });
+
+    privacyModal.addEventListener('click', (e) => {
+      if (e.target === privacyModal) {
+        privacyModal.classList.remove('show');
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && privacyModal.classList.contains('show')) {
+        privacyModal.classList.remove('show');
+      }
+    });
   </script>
 </body>
 </html>

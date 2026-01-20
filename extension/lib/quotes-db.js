@@ -80,32 +80,6 @@ async function findQuotesByThemes(themes, count = 5) {
 }
 
 /**
- * Get a single random quote, optionally matching themes
- * @param {string[]} themes - Optional themes to match
- * @param {string[]} excludeIds - Quote IDs to exclude (recently shown)
- * @returns {Promise<Object>} A quote object
- */
-async function getRandomQuote(themes = [], excludeIds = []) {
-  const quotes = await ensureQuotesLoaded();
-
-  let candidates = themes.length > 0
-    ? await findQuotesByThemes(themes, 10)
-    : [...quotes];
-
-  // Exclude recently shown quotes
-  if (excludeIds.length > 0) {
-    candidates = candidates.filter(q => !excludeIds.includes(q.id));
-  }
-
-  // If all filtered out, reset
-  if (candidates.length === 0) {
-    candidates = [...quotes];
-  }
-
-  return candidates[Math.floor(Math.random() * candidates.length)];
-}
-
-/**
  * Shuffle array using Fisher-Yates algorithm
  */
 function shuffleArray(array) {
@@ -114,14 +88,6 @@ function shuffleArray(array) {
     [array[i], array[j]] = [array[j], array[i]];
   }
   return array;
-}
-
-/**
- * Get total number of quotes in database
- */
-async function getQuoteCount() {
-  const quotes = await ensureQuotesLoaded();
-  return quotes.length;
 }
 
 // Load quotes immediately when script loads

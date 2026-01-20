@@ -9,7 +9,6 @@
 // Import local modules
 importScripts("lib/theme-extractor.js", "lib/quotes-db.js");
 
-const SYNC_INTERVAL_HOURS = 24;
 const MIN_CACHE_SIZE = 5;
 const DEFAULT_CACHE_SIZE = 15;
 const MIN_PROCESS_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes between processing
@@ -22,7 +21,8 @@ const KEYS = {
   LAST_SYNC: "last_sync_timestamp",
   SHOWN_QUOTE_IDS: "shown_quote_ids",
   EXTRACTED_THEMES: "extracted_themes",
-  LAST_SCRAPE: "last_scrape_timestamps", // Per-platform scrape timestamps
+  LAST_SCRAPE: "last_scrape_timestamps",
+  API_CAPTURES: "api_captures",
 };
 
 // Proactive scraping configuration
@@ -86,6 +86,13 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Validate sender is from this extension
+  if (sender.id !== chrome.runtime.id) {
+    console.warn("[Musing] Message from unknown sender:", sender.id);
+    sendResponse({ error: "Unauthorized" });
+    return false;
+  }
+
   if (message.type === "CONVERSATION_UPDATE") {
     handleConversationUpdate(message.data, sender);
     sendResponse({ success: true });
@@ -237,7 +244,14 @@ function detectPlatformFromUrl(url) {
 /**
  * Update scrape timestamp for a platform
  */
+const VALID_PLATFORMS = ["claude", "chatgpt", "gemini"];
+
 async function updateScrapeTimestamp(platform) {
+  // Validate platform to prevent prototype pollution
+  if (!VALID_PLATFORMS.includes(platform)) {
+    console.warn("[Musing] Invalid platform:", platform);
+    return;
+  }
   const { [KEYS.LAST_SCRAPE]: timestamps = {} } = await chrome.storage.local.get(KEYS.LAST_SCRAPE);
   timestamps[platform] = Date.now();
   await chrome.storage.local.set({ [KEYS.LAST_SCRAPE]: timestamps });
@@ -405,9 +419,4 @@ async function getQuoteForDisplay() {
   await chrome.storage.local.set({ [KEYS.SHOWN_QUOTE_IDS]: updatedShown });
 
   return quote;
-}
-
-// Export for testing
-if (typeof module !== "undefined") {
-  module.exports = { processConversationsLocally, refreshLocalQuoteCache, getQuoteForDisplay, extractThemes };
 }

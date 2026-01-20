@@ -173,13 +173,29 @@
     if (event.key === "Enter") {
       const query = searchEl.value.trim();
       if (query) {
+        let targetUrl;
+
         // Check if it looks like a URL
         if (query.includes(".") && !query.includes(" ")) {
-          const url = query.startsWith("http") ? query : `https://${query}`;
-          window.location.href = url;
+          // Block dangerous protocols
+          const lowerQuery = query.toLowerCase();
+          if (lowerQuery.startsWith("javascript:") || lowerQuery.startsWith("data:") || lowerQuery.startsWith("vbscript:")) {
+            return;
+          }
+          targetUrl = query.startsWith("http://") || query.startsWith("https://") ? query : `https://${query}`;
         } else {
           const searchUrl = SEARCH_URLS[searchEngine] || SEARCH_URLS.google;
-          window.location.href = `${searchUrl}${encodeURIComponent(query)}`;
+          targetUrl = `${searchUrl}${encodeURIComponent(query)}`;
+        }
+
+        // Validate URL before navigation
+        try {
+          const parsed = new URL(targetUrl);
+          if (parsed.protocol === "https:" || parsed.protocol === "http:") {
+            window.location.href = targetUrl;
+          }
+        } catch {
+          // Invalid URL, ignore
         }
       }
     }
@@ -208,18 +224,36 @@
       const option = document.createElement("div");
       option.className = `engine-option${searchEngine === key ? " selected" : ""}`;
       option.dataset.engine = key;
-      option.innerHTML = `
-        <img class="engine-option-icon" src="${ENGINE_ICONS[key]}" alt="">
-        <span class="engine-option-name">${ENGINE_NAMES[key]}</span>
-        <svg class="engine-option-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-      `;
+
+      const img = document.createElement("img");
+      img.className = "engine-option-icon";
+      img.src = ENGINE_ICONS[key];
+      img.alt = "";
+      option.appendChild(img);
+
+      const span = document.createElement("span");
+      span.className = "engine-option-name";
+      span.textContent = ENGINE_NAMES[key];
+      option.appendChild(span);
+
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svg.setAttribute("class", "engine-option-check");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("fill", "none");
+      svg.setAttribute("stroke", "currentColor");
+      svg.setAttribute("stroke-width", "2.5");
+      svg.setAttribute("stroke-linecap", "round");
+      svg.setAttribute("stroke-linejoin", "round");
+      const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+      polyline.setAttribute("points", "20 6 9 17 4 12");
+      svg.appendChild(polyline);
+      option.appendChild(svg);
+
       option.addEventListener("click", () => selectEngine(key));
       return option;
     };
 
-    engineDropdownEl.innerHTML = "";
+    engineDropdownEl.replaceChildren();
 
     // Search engines section
     const searchLabel = document.createElement("div");

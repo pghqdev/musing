@@ -201,20 +201,34 @@ async function loadLogs() {
 
   logsEmptyEl.style.display = "none";
 
-  logsListEl.innerHTML = displayData.map((log) => {
+  // Use DOM APIs instead of innerHTML to prevent XSS
+  logsListEl.replaceChildren();
+  displayData.forEach((log) => {
     const time = new Date(log.timestamp).toLocaleString();
-    const source = log.source === "claude" ? "Claude.ai" :
-                   log.source === "chatgpt" ? "ChatGPT" :
-                   log.source === "gemini" ? "Gemini" : "Unknown";
+    const sourceName = log.source === "claude" ? "Claude.ai" :
+                       log.source === "chatgpt" ? "ChatGPT" :
+                       log.source === "gemini" ? "Gemini" : "Unknown";
     const preview = log.preview || (typeof log === "string" ? log.slice(0, 100) : "");
 
-    return `
-      <div class="log-item">
-        <div class="log-source">${source} <span class="log-time">${time}</span></div>
-        <div class="log-preview">${escapeHtml(preview)}${log.length > 100 ? "..." : ""}</div>
-      </div>
-    `;
-  }).join("");
+    const logItem = document.createElement("div");
+    logItem.className = "log-item";
+
+    const sourceDiv = document.createElement("div");
+    sourceDiv.className = "log-source";
+    sourceDiv.textContent = sourceName + " ";
+    const timeSpan = document.createElement("span");
+    timeSpan.className = "log-time";
+    timeSpan.textContent = time;
+    sourceDiv.appendChild(timeSpan);
+
+    const previewDiv = document.createElement("div");
+    previewDiv.className = "log-preview";
+    previewDiv.textContent = preview + (log.length > 100 ? "..." : "");
+
+    logItem.appendChild(sourceDiv);
+    logItem.appendChild(previewDiv);
+    logsListEl.appendChild(logItem);
+  });
 }
 
 /**

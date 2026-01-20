@@ -187,7 +187,7 @@
           timestamp: Date.now(),
           source: "api",
         },
-        "*"
+        window.location.origin
       );
     }
   }

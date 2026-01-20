@@ -68,7 +68,9 @@
    * Handle messages from the injected script
    */
   function handleMessage(event) {
+    // Validate source and origin for security
     if (event.source !== window) return;
+    if (event.origin !== window.location.origin) return;
     if (!event.data || event.data.type !== MUSING_MESSAGE_TYPE) return;
 
     const { platform, text, source } = event.data;

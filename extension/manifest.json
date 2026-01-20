@@ -14,6 +14,9 @@
     "https://chatgpt.com/*",
     "https://gemini.google.com/app/*"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
   "chrome_url_overrides": {
     "newtab": "newtab/newtab.html"
   },
@@ -22,8 +25,20 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["inject/api-interceptor.js", "data/quotes.json"],
-      "matches": ["<all_urls>"]
+      "resources": ["inject/api-interceptor.js"],
+      "matches": [
+        "https://claude.ai/*",
+        "https://chatgpt.com/*",
+        "https://gemini.google.com/*"
+      ]
+    },
+    {
+      "resources": ["data/quotes.json"],
+      "matches": [
+        "https://claude.ai/*",
+        "https://chatgpt.com/*",
+        "https://gemini.google.com/*"
+      ]
     }
   ],
   "content_scripts": [

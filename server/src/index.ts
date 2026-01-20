@@ -75,19 +75,13 @@ function parseJsonRobust(content: string): unknown {
 }
 
 /**
- * Extract themes from conversation using Groq
+ * Extract themes from conversation using Groq with strict JSON mode
  */
 async function extractThemes(
   conversation: string,
   apiKey: string
 ): Promise<string[]> {
-  // Optimized prompt for gpt-oss - more direct, structured
-  const systemPrompt = `Extract 3-5 themes from the conversation. Output a JSON array of lowercase strings only.
-
-Examples:
-["debugging", "async-programming", "learning"]
-["career-change", "uncertainty", "growth"]
-["writing", "creativity", "motivation"]
+  const systemPrompt = `Extract 3-5 themes from the conversation text.
 
 Theme categories:
 - Technical: programming, algorithms, debugging, architecture
@@ -95,7 +89,7 @@ Theme categories:
 - Life: career, relationships, health, finance
 - Abstract: complexity, persistence, patience, wisdom
 
-Output ONLY the JSON array.`;
+Return lowercase theme strings.`;
 
   const response = await fetch(
     "https://api.groq.com/openai/v1/chat/completions",
@@ -106,7 +100,7 @@ Output ONLY the JSON array.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama-3.1-8b-instant",
+        model: "openai/gpt-oss-20b",
         messages: [
           { role: "system", content: systemPrompt },
           {
@@ -114,9 +108,26 @@ Output ONLY the JSON array.`;
             content: conversation.slice(0, 4000),
           },
         ] as GroqMessage[],
-        temperature: 0.2, // Lower for more consistent JSON output
-        max_tokens: 100, // Reduced - we only need a short array
-        response_format: { type: "json_object" }, // Request JSON mode
+        temperature: 0.2,
+        max_tokens: 150,
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "theme_extraction",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                themes: {
+                  type: "array",
+                  items: { type: "string" },
+                },
+              },
+              required: ["themes"],
+              additionalProperties: false,
+            },
+          },
+        },
       }),
     }
   );
@@ -144,33 +155,18 @@ Output ONLY the JSON array.`;
     return [];
   }
 
-  // Parse the response
-  const parsed = parseJsonRobust(content);
+  // With strict JSON mode, response is guaranteed to match schema
+  const parsed = parseJsonRobust(content) as { themes: string[] } | null;
 
-  // Handle different response formats
-  if (Array.isArray(parsed)) {
-    return parsed
+  if (parsed && Array.isArray(parsed.themes)) {
+    return parsed.themes
       .filter((t): t is string => typeof t === "string")
       .map((t) => t.toLowerCase().trim())
       .filter((t) => t.length > 0)
       .slice(0, 5);
   }
 
-  // If JSON mode returned an object with themes array
-  if (parsed && typeof parsed === "object" && "themes" in parsed) {
-    const themes = (parsed as { themes: unknown }).themes;
-    if (Array.isArray(themes)) {
-      return themes
-        .filter((t): t is string => typeof t === "string")
-        .map((t) => t.toLowerCase().trim())
-        .filter((t) => t.length > 0)
-        .slice(0, 5);
-    }
-  }
-
-  // Fallback: extract words from content
-  const words = content.toLowerCase().match(/[a-z][a-z-]+[a-z]/g) || [];
-  return [...new Set(words)].filter((w) => w.length > 3).slice(0, 5);
+  return [];
 }
 
 /**

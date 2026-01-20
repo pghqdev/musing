@@ -121,6 +121,19 @@
       height: 18px;
     }
 
+    .branding {
+      position: fixed;
+      z-index: 1000;
+      bottom: 1.5rem;
+      left: 1.5rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 0.75rem;
+      color: light-dark(#bdc1c6, #5f6368);
+      letter-spacing: 0.02em;
+      user-select: none;
+      text-decoration: none;
+    }
+
     /* Loading state */
     .loading .quote,
     .loading .author {
@@ -250,39 +263,44 @@
       color: light-dark(#9aa0a6, #9aa0a6);
     }
 
-    /* Engine dropdown */
+    /* Engine dropdown - 3 column layout */
     .engine-dropdown {
       position: absolute;
       top: calc(100% + 8px);
-      left: 0;
+      left: 50%;
+      transform: translateX(-50%) translateY(-8px);
       background: light-dark(#fff, #292a2d);
       border: 1px solid light-dark(#dfe1e5, #3c4043);
-      border-radius: 8px;
+      border-radius: 12px;
       box-shadow: light-dark(0 4px 16px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.5));
-      padding: 0.5rem 0;
-      min-width: 180px;
+      padding: 0.75rem;
+      width: 400px;
       opacity: 0;
       visibility: hidden;
-      transform: translateY(-8px);
       transition: opacity 0.15s, transform 0.15s, visibility 0.15s;
       z-index: 100;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.375rem;
     }
 
     .engine-dropdown.open {
       opacity: 1;
       visibility: visible;
-      transform: translateY(0);
+      transform: translateX(-50%) translateY(0);
     }
 
     .engine-option {
       display: flex;
       align-items: center;
-      gap: 0.625rem;
-      padding: 0.5rem 0.75rem;
+      gap: 0.5rem;
+      padding: 0.5rem 0.5rem;
       cursor: pointer;
       transition: background 0.15s;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       font-size: 0.8125rem;
+      border-radius: 6px;
+      min-width: 0;
     }
 
     .engine-option:hover {
@@ -294,42 +312,53 @@
     }
 
     .engine-option-icon {
-      width: 18px;
-      height: 18px;
+      width: 16px;
+      height: 16px;
       border-radius: 3px;
+      flex-shrink: 0;
     }
 
     .engine-option-name {
       flex: 1;
       text-align: start;
       color: light-dark(#202124, #e8eaed);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
     }
 
     .engine-option-check {
-      width: 14px;
-      height: 14px;
+      width: 12px;
+      height: 12px;
       color: light-dark(#1a73e8, #8ab4f8);
-      opacity: 0;
+      display: none;
+      flex-shrink: 0;
     }
 
     .engine-option.selected .engine-option-check {
-      opacity: 1;
+      display: block;
     }
 
     .engine-divider {
-      height: 1px;
-      background: light-dark(rgba(0, 0, 0, 0.08), rgba(255, 255, 255, 0.08));
-      margin: 0.375rem 0.75rem;
+      display: none;
     }
 
     .engine-section-label {
-      padding: 0.5rem 0.75rem 0.25rem;
+      grid-column: 1 / -1;
+      padding: 0.5rem 0.375rem 0.25rem;
       font-size: 0.65rem;
       color: light-dark(#5f6368, #9aa0a6);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       text-align: left;
+    }
+
+    .engine-section-label:not(:first-child) {
+      margin-top: 0.25rem;
+      padding-top: 0.625rem;
+      border-top: 1px solid light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.06));
     }
 
     /* Onboarding overlay */
@@ -561,6 +590,8 @@
       </div>
     </div>
   </div>
+
+  <a class="branding" href="https://musing.wiki" target="_blank">musing</a>
 
   <button class="refresh-btn" id="refresh" title="New quote">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

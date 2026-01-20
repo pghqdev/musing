@@ -19,6 +19,7 @@ const KEYS = {
   QUOTES: "cached_quotes",
   CONVERSATIONS: "recent_conversations",
   LAST_PROCESS: "last_process_timestamp",
+  LAST_SYNC: "last_sync_timestamp",
   SHOWN_QUOTE_IDS: "shown_quote_ids",
   EXTRACTED_THEMES: "extracted_themes",
   LAST_SCRAPE: "last_scrape_timestamps", // Per-platform scrape timestamps
@@ -112,7 +113,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
     return true;
   }
+
+  if (message.type === "FORCE_SYNC") {
+    handleForceSync().then(sendResponse);
+    return true;
+  }
 });
+
+/**
+ * Handle manual sync from popup
+ * Refreshes local quote cache and updates sync timestamp
+ */
+async function handleForceSync() {
+  try {
+    await processConversationsLocally();
+    await chrome.storage.local.set({ [KEYS.LAST_SYNC]: Date.now() });
+    console.log("[Musing] Manual sync completed");
+    return { success: true };
+  } catch (error) {
+    console.error("[Musing] Sync failed:", error);
+    return { success: false, error: error.message };
+  }
+}
 
 /**
  * Handle conversation data from content scripts

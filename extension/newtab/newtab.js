@@ -16,6 +16,8 @@
     chatgpt: "https://chatgpt.com/?q=",
     claude: "https://claude.ai/new?q=",
     gemini: "https://gemini.google.com/app?q=",
+    wolfram: "https://www.wolframalpha.com/input?i=",
+    github: "https://github.com/search?q=",
     namecheap: "https://www.namecheap.com/domains/registration/results/?domain=",
   };
 
@@ -26,22 +28,26 @@
     chatgpt: "ChatGPT",
     claude: "Claude",
     gemini: "Gemini",
+    wolfram: "Wolfram Alpha",
+    github: "GitHub",
     namecheap: "Namecheap",
   };
 
   const ENGINE_ICONS = {
-    google: "https://www.google.com/favicon.ico",
-    duckduckgo: "https://duckduckgo.com/favicon.ico",
-    perplexity: "https://www.google.com/s2/favicons?domain=perplexity.ai&sz=32",
-    chatgpt: "https://chatgpt.com/favicon.ico",
-    claude: "https://claude.ai/favicon.ico",
-    gemini: "https://www.google.com/s2/favicons?domain=gemini.google.com&sz=32",
-    namecheap: "https://www.namecheap.com/favicon.ico",
+    google: "../icons/engines/google.png",
+    duckduckgo: "../icons/engines/duckduckgo.png",
+    perplexity: "../icons/engines/perplexity.png",
+    chatgpt: "../icons/engines/chatgpt.png",
+    claude: "../icons/engines/claude.png",
+    gemini: "../icons/engines/gemini.png",
+    wolfram: "../icons/engines/wolfram.png",
+    github: "../icons/engines/github.png",
+    namecheap: "../icons/engines/namecheap.png",
   };
 
   const SEARCH_ENGINES = ["google", "duckduckgo", "perplexity"];
   const AI_PLATFORMS = ["chatgpt", "claude", "gemini"];
-  const TOOLS = ["namecheap"];
+  const TOOLS = ["wolfram", "github", "namecheap"];
 
   // Local fallback quotes (used when service worker is unavailable)
   const LOCAL_FALLBACKS = [

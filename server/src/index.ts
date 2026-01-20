@@ -5,7 +5,7 @@
 
 interface Env {
   DB: D1Database;
-  GROQ_API_KEY: string;
+  MUSING_GROQ_API_KEY: string;
 }
 
 interface QuoteRequest {
@@ -134,7 +134,7 @@ async function findQuotes(
 
   // If not enough themed quotes, pad with random ones
   if (quotes.length < count) {
-    const existingIds = quotes.map((q) => q.id);
+    const existingIds = quotes.map((q: Quote) => q.id);
     const excludeClause =
       existingIds.length > 0
         ? `WHERE id NOT IN (${existingIds.join(",")})`
@@ -191,7 +191,7 @@ export default {
         }
 
         // Extract themes
-        const themes = await extractThemes(conversation, env.GROQ_API_KEY);
+        const themes = await extractThemes(conversation, env.MUSING_GROQ_API_KEY);
 
         // Find matching quotes
         const quotes = await findQuotes(

@@ -2,10 +2,7 @@ name = "musing-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
-[vars]
-# Add GROQ_API_KEY via `wrangler secret put GROQ_API_KEY`
-
 [[d1_databases]]
 binding = "DB"
 database_name = "musing"
-database_id = "" # Fill after `wrangler d1 create musing`
+database_id = "67086f1f-b526-4423-b4cb-69a943cb3216"

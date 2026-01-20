@@ -1,8 +1,10 @@
 {
   "manifest_version": 3,
   "name": "musing",
+  "short_name": "musing",
   "version": "1.0.0",
-  "description": "let the wisdom of the past guide your present...",
+  "description": "Personalized quotes on every new tab, matched to your AI conversations. Fully private - all processing happens locally.",
+  "homepage_url": "https://musing.wiki",
   "minimum_chrome_version": "110",
   "permissions": [
     "storage",

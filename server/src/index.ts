@@ -75,21 +75,21 @@ function parseJsonRobust(content: string): unknown {
 }
 
 /**
- * Extract themes from conversation using Groq with strict JSON mode
+ * Extract themes from conversation using Groq
  */
 async function extractThemes(
   conversation: string,
   apiKey: string
 ): Promise<string[]> {
-  const systemPrompt = `Extract 3-5 themes from the conversation text.
+  const systemPrompt = `You extract themes from conversation text and return JSON.
 
-Theme categories:
+Extract 3-5 themes. Theme categories:
 - Technical: programming, algorithms, debugging, architecture
 - Emotional: frustration, curiosity, excitement, anxiety
 - Life: career, relationships, health, finance
 - Abstract: complexity, persistence, patience, wisdom
 
-Return lowercase theme strings.`;
+Respond with JSON in this exact format: {"themes": ["theme1", "theme2", "theme3"]}`;
 
   const response = await fetch(
     "https://api.groq.com/openai/v1/chat/completions",
@@ -100,7 +100,7 @@ Return lowercase theme strings.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "openai/gpt-oss-20b",
+        model: "llama-3.3-70b-versatile",
         messages: [
           { role: "system", content: systemPrompt },
           {
@@ -110,24 +110,7 @@ Return lowercase theme strings.`;
         ] as GroqMessage[],
         temperature: 0.2,
         max_tokens: 150,
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "theme_extraction",
-            strict: true,
-            schema: {
-              type: "object",
-              properties: {
-                themes: {
-                  type: "array",
-                  items: { type: "string" },
-                },
-              },
-              required: ["themes"],
-              additionalProperties: false,
-            },
-          },
-        },
+        response_format: { type: "json_object" },
       }),
     }
   );

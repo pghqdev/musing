@@ -14,13 +14,41 @@
     brave: "https://search.brave.com/search?q=",
   };
 
+  const ENGINE_NAMES = {
+    google: "Google",
+    duckduckgo: "DuckDuckGo",
+    bing: "Bing",
+    brave: "Brave",
+  };
+
   const quoteEl = document.getElementById("quote");
   const authorEl = document.getElementById("author");
   const containerEl = document.getElementById("container");
   const searchEl = document.getElementById("search");
   const refreshEl = document.getElementById("refresh");
+  const loadingEl = document.getElementById("loading-indicator");
 
   let searchEngine = "google";
+
+  /**
+   * Show loading state
+   */
+  function showLoading() {
+    containerEl.classList.add("loading");
+    if (loadingEl) {
+      loadingEl.classList.add("show");
+    }
+  }
+
+  /**
+   * Hide loading state
+   */
+  function hideLoading() {
+    containerEl.classList.remove("loading");
+    if (loadingEl) {
+      loadingEl.classList.remove("show");
+    }
+  }
 
   /**
    * Display a quote
@@ -28,14 +56,14 @@
   function displayQuote(quote) {
     quoteEl.textContent = quote.text;
     authorEl.textContent = quote.author;
-    containerEl.classList.remove("loading");
+    hideLoading();
   }
 
   /**
    * Fetch quote from background worker
    */
   async function loadQuote() {
-    containerEl.classList.add("loading");
+    showLoading();
 
     try {
       const quote = await chrome.runtime.sendMessage({ type: "GET_QUOTE" });
@@ -76,15 +104,19 @@
   }
 
   /**
+   * Update search placeholder
+   */
+  function updateSearchPlaceholder() {
+    searchEl.placeholder = `Search ${ENGINE_NAMES[searchEngine] || "Google"}...`;
+  }
+
+  /**
    * Load settings
    */
   async function loadSettings() {
     const { [SETTINGS_KEY]: settings = {} } = await chrome.storage.local.get(SETTINGS_KEY);
     searchEngine = settings.searchEngine || "google";
-
-    // Update placeholder to show current search engine
-    const engineNames = { google: "Google", duckduckgo: "DuckDuckGo", bing: "Bing", brave: "Brave" };
-    searchEl.placeholder = `Search ${engineNames[searchEngine] || "Google"}...`;
+    updateSearchPlaceholder();
   }
 
   /**
@@ -95,11 +127,28 @@
     loadQuote();
   }
 
+  /**
+   * Listen for storage changes to update settings in real-time
+   */
+  function setupStorageListener() {
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName === "local" && changes[SETTINGS_KEY]) {
+        const newSettings = changes[SETTINGS_KEY].newValue || {};
+        if (newSettings.searchEngine && newSettings.searchEngine !== searchEngine) {
+          searchEngine = newSettings.searchEngine;
+          updateSearchPlaceholder();
+          console.log("[Musing] Search engine updated to:", searchEngine);
+        }
+      }
+    });
+  }
+
   // Event listeners
   searchEl.addEventListener("keydown", handleSearch);
   refreshEl.addEventListener("click", handleRefresh);
 
-  // Load settings and quote on page load
+  // Initialize
   loadSettings();
   loadQuote();
+  setupStorageListener();
 })();

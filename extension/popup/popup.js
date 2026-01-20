@@ -17,6 +17,9 @@ const enableChatGPTEl = document.getElementById("enable-chatgpt");
 const statusEl = document.getElementById("status");
 const lastSyncEl = document.getElementById("last-sync");
 const syncBtnEl = document.getElementById("sync-btn");
+const privacyLinkEl = document.getElementById("privacy-link");
+const privacyModalEl = document.getElementById("privacy-modal");
+const privacyCloseEl = document.getElementById("privacy-close");
 
 /**
  * Load settings from storage
@@ -45,13 +48,16 @@ async function saveSettings() {
 
 /**
  * Show saved status briefly
+ * @param {string} message - Status message
+ * @param {"success" | "error"} type - Status type
  */
-function showStatus(message = "Saved") {
+function showStatus(message = "Saved", type = "success") {
   statusEl.textContent = message;
-  statusEl.classList.add("show");
+  statusEl.classList.remove("error", "success");
+  statusEl.classList.add("show", type);
   setTimeout(() => {
-    statusEl.classList.remove("show");
-  }, 1200);
+    statusEl.classList.remove("show", "error", "success");
+  }, 2000);
 }
 
 /**
@@ -93,16 +99,36 @@ async function handleSync() {
   syncBtnEl.textContent = "Syncing...";
 
   try {
-    await chrome.runtime.sendMessage({ type: "FORCE_SYNC" });
+    const response = await chrome.runtime.sendMessage({ type: "FORCE_SYNC" });
     await loadLastSync();
-    showStatus("Synced");
+
+    if (response && response.error) {
+      showStatus(response.error, "error");
+    } else {
+      showStatus("Synced successfully", "success");
+    }
   } catch (error) {
     console.error("Sync failed:", error);
-    showStatus("Sync failed");
+    showStatus("Sync failed - check connection", "error");
   } finally {
     syncBtnEl.disabled = false;
     syncBtnEl.textContent = "Sync Now";
   }
+}
+
+/**
+ * Show privacy modal
+ */
+function showPrivacyModal(event) {
+  event.preventDefault();
+  privacyModalEl.classList.add("show");
+}
+
+/**
+ * Hide privacy modal
+ */
+function hidePrivacyModal() {
+  privacyModalEl.classList.remove("show");
 }
 
 // Event listeners
@@ -110,6 +136,11 @@ searchEngineEl.addEventListener("change", saveSettings);
 enableClaudeEl.addEventListener("change", saveSettings);
 enableChatGPTEl.addEventListener("change", saveSettings);
 syncBtnEl.addEventListener("click", handleSync);
+privacyLinkEl.addEventListener("click", showPrivacyModal);
+privacyCloseEl.addEventListener("click", hidePrivacyModal);
+privacyModalEl.addEventListener("click", (e) => {
+  if (e.target === privacyModalEl) hidePrivacyModal();
+});
 
 // Load on popup open
 loadSettings();

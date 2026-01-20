@@ -181,6 +181,125 @@
     .status.show {
       display: block;
     }
+
+    .status.error {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+    }
+
+    .status.success {
+      background: rgba(74, 222, 128, 0.15);
+      color: #4ade80;
+    }
+
+    /* Privacy section */
+    .privacy-section {
+      padding: 0.75rem 1rem;
+    }
+
+    .privacy-notice {
+      font-size: 0.7rem;
+      color: light-dark(#808080, #909090);
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .privacy-icon {
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+      opacity: 0.7;
+    }
+
+    .privacy-notice a {
+      color: #4a9eff;
+      text-decoration: none;
+      margin-left: auto;
+    }
+
+    .privacy-notice a:hover {
+      text-decoration: underline;
+    }
+
+    /* Privacy modal */
+    .privacy-modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+    }
+
+    .privacy-modal.show {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .privacy-modal-content {
+      background: light-dark(#fff, #2d2d30);
+      border-radius: 8px;
+      width: 320px;
+      max-height: 400px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .privacy-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.1));
+    }
+
+    .privacy-modal-header h3 {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .privacy-close {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+      color: inherit;
+      opacity: 0.7;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .privacy-close:hover {
+      opacity: 1;
+    }
+
+    .privacy-modal-body {
+      padding: 1rem;
+      overflow-y: auto;
+      font-size: 0.75rem;
+      line-height: 1.5;
+    }
+
+    .privacy-modal-body h4 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin: 0.75rem 0 0.25rem;
+    }
+
+    .privacy-modal-body h4:first-child {
+      margin-top: 0;
+    }
+
+    .privacy-modal-body p {
+      color: light-dark(#606060, #a0a0a0);
+      margin: 0;
+    }
   </style>
 </head>
 <body>
@@ -238,6 +357,41 @@
   </div>
 
   <div class="status" id="status">Saved</div>
+
+  <div class="section privacy-section">
+    <div class="privacy-notice">
+      <svg class="privacy-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+        <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/>
+      </svg>
+      Conversation themes are sent to our server to find relevant quotes.
+      <a href="#" id="privacy-link">Privacy Policy</a>
+    </div>
+  </div>
+
+  <div class="privacy-modal" id="privacy-modal">
+    <div class="privacy-modal-content">
+      <div class="privacy-modal-header">
+        <h3>Privacy Policy</h3>
+        <button class="privacy-close" id="privacy-close">&times;</button>
+      </div>
+      <div class="privacy-modal-body">
+        <h4>What We Collect</h4>
+        <p>We extract themes from your AI conversations (Claude.ai, ChatGPT) to find relevant historical quotes. Only extracted themes are sent to our server, not full conversations.</p>
+
+        <h4>How It's Used</h4>
+        <p>Themes are used solely to query our quote database and return relevant quotes. We do not use your data for training, advertising, or any other purpose.</p>
+
+        <h4>Data Storage</h4>
+        <p>Conversation snippets are stored locally on your device. Theme data sent to our server is not permanently stored and is discarded after processing.</p>
+
+        <h4>Your Rights</h4>
+        <p>You can disable data collection at any time using the toggles above. To delete all local data, remove the extension from Chrome.</p>
+
+        <h4>Contact</h4>
+        <p>Questions? Contact us at privacy@musing.app</p>
+      </div>
+    </div>
+  </div>
 
   <script src="popup.js"></script>
 </body>

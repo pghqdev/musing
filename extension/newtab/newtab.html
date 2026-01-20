@@ -28,6 +28,7 @@
       max-width: 700px;
       text-align: center;
       animation: fadeIn 0.6s ease-out;
+      position: relative;
     }
 
     @keyframes fadeIn {
@@ -102,6 +103,40 @@
       opacity: 0.3;
     }
 
+    /* Loading indicator */
+    .loading-indicator {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .loading-indicator.show {
+      display: block;
+    }
+
+    .loading-spinner {
+      width: 24px;
+      height: 24px;
+      border: 2px solid light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.1));
+      border-top-color: light-dark(#1a73e8, #8ab4f8);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    /* Skeleton loading for quote */
+    .container.loading .quote::before,
+    .container.loading .quote::after {
+      opacity: 0.3;
+    }
+
     /* Search bar (optional, minimal) */
     .search-container {
       margin-top: 3rem;
@@ -133,6 +168,9 @@
 </head>
 <body>
   <div class="container" id="container">
+    <div class="loading-indicator" id="loading-indicator">
+      <div class="loading-spinner"></div>
+    </div>
     <p class="quote" id="quote">Loading wisdom...</p>
     <p class="author" id="author"></p>
 

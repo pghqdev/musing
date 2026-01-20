@@ -9,9 +9,15 @@
   const SETTINGS_KEY = "musing_settings";
   const SCRAPE_INTERVAL_MS = 30000; // 30 seconds
   const MAX_TEXT_LENGTH = 5000;
+  const DEBOUNCE_MS = 2500; // Increased from 1s to 2.5s
+  const MIN_UPDATE_INTERVAL_MS = 5000; // Minimum 5s between updates
 
   let lastScrapedText = "";
+  let lastUpdateTime = 0;
   let isEnabled = true;
+  let observer = null;
+  let scrapeInterval = null;
+  let debounceTimeout = null;
 
   /**
    * Check if ChatGPT scraping is enabled
@@ -20,6 +26,55 @@
     const { [SETTINGS_KEY]: settings = {} } = await chrome.storage.local.get(SETTINGS_KEY);
     isEnabled = settings.enableChatGPT ?? true;
     return isEnabled;
+  }
+
+  /**
+   * Sanitize text - remove potentially sensitive patterns
+   */
+  function sanitizeText(text) {
+    if (!text) return "";
+
+    // Remove email addresses
+    text = text.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, "[email]");
+
+    // Remove URLs with potential auth tokens
+    text = text.replace(/https?:\/\/[^\s]+/g, (url) => {
+      try {
+        const parsed = new URL(url);
+        // Keep domain, remove query params that might contain tokens
+        return `${parsed.protocol}//${parsed.host}${parsed.pathname}`;
+      } catch {
+        return "[url]";
+      }
+    });
+
+    // Remove potential API keys (long alphanumeric strings)
+    text = text.replace(/\b[a-zA-Z0-9]{32,}\b/g, "[key]");
+
+    // Remove potential phone numbers
+    text = text.replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, "[phone]");
+
+    return text;
+  }
+
+  /**
+   * Validate that text is actual conversation content
+   */
+  function isValidConversation(text) {
+    if (!text || text.length < 50) return false;
+
+    // Filter out likely non-conversation content
+    const nonConversationPatterns = [
+      /^(Loading|Please wait|Error|404|Not found)/i,
+      /^<!DOCTYPE/i,
+      /^<html/i,
+    ];
+
+    for (const pattern of nonConversationPatterns) {
+      if (pattern.test(text.trim())) return false;
+    }
+
+    return true;
   }
 
   /**
@@ -63,7 +118,8 @@
       }
     }
 
-    return messages.join("\n\n").slice(0, MAX_TEXT_LENGTH);
+    const combined = messages.join("\n\n").slice(0, MAX_TEXT_LENGTH);
+    return sanitizeText(combined);
   }
 
   /**
@@ -72,7 +128,19 @@
   function sendUpdate(text) {
     if (!text || text === lastScrapedText) return;
 
+    // Rate limiting
+    const now = Date.now();
+    if (now - lastUpdateTime < MIN_UPDATE_INTERVAL_MS) {
+      return;
+    }
+
+    // Validate content
+    if (!isValidConversation(text)) {
+      return;
+    }
+
     lastScrapedText = text;
+    lastUpdateTime = now;
 
     chrome.runtime.sendMessage(
       {
@@ -90,19 +158,29 @@
   }
 
   /**
+   * Debounced scrape function
+   */
+  function debouncedScrape() {
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+    }
+    debounceTimeout = setTimeout(() => {
+      const text = scrapeConversation();
+      sendUpdate(text);
+    }, DEBOUNCE_MS);
+  }
+
+  /**
    * Observe DOM changes for new messages
    */
   function observeChanges() {
-    const observer = new MutationObserver((mutations) => {
+    observer = new MutationObserver((mutations) => {
       const hasNewContent = mutations.some(
         (m) => m.addedNodes.length > 0 || m.type === "characterData"
       );
 
       if (hasNewContent) {
-        setTimeout(() => {
-          const text = scrapeConversation();
-          sendUpdate(text);
-        }, 1000);
+        debouncedScrape();
       }
     });
 
@@ -113,6 +191,28 @@
     });
 
     return observer;
+  }
+
+  /**
+   * Cleanup function to disconnect observer and clear intervals
+   */
+  function cleanup() {
+    console.log("[Musing] Cleaning up ChatGPT content script");
+
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
+
+    if (scrapeInterval) {
+      clearInterval(scrapeInterval);
+      scrapeInterval = null;
+    }
+
+    if (debounceTimeout) {
+      clearTimeout(debounceTimeout);
+      debounceTimeout = null;
+    }
   }
 
   // Initialize
@@ -133,12 +233,16 @@
     observeChanges();
 
     // Periodic scrape as backup
-    setInterval(async () => {
+    scrapeInterval = setInterval(async () => {
       if (await checkEnabled()) {
         const text = scrapeConversation();
         sendUpdate(text);
       }
     }, SCRAPE_INTERVAL_MS);
+
+    // Cleanup on page unload
+    window.addEventListener("beforeunload", cleanup);
+    window.addEventListener("pagehide", cleanup);
 
     console.log("[Musing] ChatGPT content script loaded");
   }

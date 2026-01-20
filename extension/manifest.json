@@ -10,7 +10,8 @@
   ],
   "host_permissions": [
     "https://claude.ai/*",
-    "https://chatgpt.com/*"
+    "https://chatgpt.com/*",
+    "https://gemini.google.com/app/*"
   ],
   "chrome_url_overrides": {
     "newtab": "newtab/newtab.html"
@@ -28,6 +29,11 @@
     {
       "matches": ["https://chatgpt.com/*"],
       "js": ["content-scripts/chatgpt.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://gemini.google.com/app/*"],
+      "js": ["content-scripts/gemini.js"],
       "run_at": "document_idle"
     }
   ],

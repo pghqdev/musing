@@ -12,12 +12,14 @@ const DEFAULTS = {
   searchEngine: "google",
   enableClaude: true,
   enableChatGPT: true,
+  enableGemini: true,
 };
 
 // Settings tab elements
 const searchEngineEl = document.getElementById("search-engine");
 const enableClaudeEl = document.getElementById("enable-claude");
 const enableChatGPTEl = document.getElementById("enable-chatgpt");
+const enableGeminiEl = document.getElementById("enable-gemini");
 const statusEl = document.getElementById("status");
 const lastSyncEl = document.getElementById("last-sync");
 const syncBtnEl = document.getElementById("sync-btn");
@@ -48,6 +50,7 @@ async function loadSettings() {
   searchEngineEl.value = settings.searchEngine || DEFAULTS.searchEngine;
   enableClaudeEl.checked = settings.enableClaude ?? DEFAULTS.enableClaude;
   enableChatGPTEl.checked = settings.enableChatGPT ?? DEFAULTS.enableChatGPT;
+  enableGeminiEl.checked = settings.enableGemini ?? DEFAULTS.enableGemini;
 }
 
 /**
@@ -58,6 +61,7 @@ async function saveSettings() {
     searchEngine: searchEngineEl.value,
     enableClaude: enableClaudeEl.checked,
     enableChatGPT: enableChatGPTEl.checked,
+    enableGemini: enableGeminiEl.checked,
   };
 
   await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
@@ -198,7 +202,8 @@ async function loadLogs() {
   logsListEl.innerHTML = displayData.map((log) => {
     const time = new Date(log.timestamp).toLocaleString();
     const source = log.source === "claude" ? "Claude.ai" :
-                   log.source === "chatgpt" ? "ChatGPT" : "Unknown";
+                   log.source === "chatgpt" ? "ChatGPT" :
+                   log.source === "gemini" ? "Gemini" : "Unknown";
     const preview = log.preview || (typeof log === "string" ? log.slice(0, 100) : "");
 
     return `
@@ -252,6 +257,7 @@ function hideRawDataModal() {
 searchEngineEl.addEventListener("change", saveSettings);
 enableClaudeEl.addEventListener("change", saveSettings);
 enableChatGPTEl.addEventListener("change", saveSettings);
+enableGeminiEl.addEventListener("change", saveSettings);
 syncBtnEl.addEventListener("click", handleSync);
 privacyLinkEl.addEventListener("click", showPrivacyModal);
 privacyCloseEl.addEventListener("click", hidePrivacyModal);

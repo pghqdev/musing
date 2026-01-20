@@ -18,7 +18,21 @@ const KEYS = {
   SHOWN_QUOTE_IDS: "shown_quote_ids",
   LAST_ERROR: "last_error",
   PENDING_SYNC: "pending_sync",
+  LAST_SCRAPE: "last_scrape_timestamps", // Per-platform scrape timestamps
+  API_CAPTURES: "api_captures", // Captured API responses
 };
+
+// Proactive scraping configuration
+const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
+const PROACTIVE_SCRAPE_TIMEOUT_MS = 30000; // 30 seconds max per tab
+const PLATFORMS = {
+  claude: "https://claude.ai/",
+  chatgpt: "https://chatgpt.com/",
+  gemini: "https://gemini.google.com/app",
+};
+
+// Track background scrape tabs
+const backgroundScrapeTabs = new Map();
 
 // Expanded fallback quotes for offline/error scenarios
 const FALLBACK_QUOTES = [
@@ -48,8 +62,28 @@ chrome.runtime.onInstalled.addListener(async () => {
     periodInMinutes: SYNC_INTERVAL_HOURS * 60,
   });
 
+  // Set up proactive scraping check alarm (every 6 hours)
+  chrome.alarms.create("check-stale-scrapes", {
+    periodInMinutes: 6 * 60,
+  });
+
+  // Initialize scrape timestamps
+  await chrome.storage.local.set({
+    [KEYS.LAST_SCRAPE]: {
+      claude: 0,
+      chatgpt: 0,
+      gemini: 0,
+    },
+  });
+
   // Fetch initial generic quotes
   await fetchAndCacheQuotes("");
+});
+
+// Check for stale scrapes on startup
+chrome.runtime.onStartup.addListener(async () => {
+  console.log("[Musing] Extension startup - checking for stale scrapes");
+  await checkAndTriggerProactiveScrapes();
 });
 
 // Handle alarm
@@ -61,6 +95,18 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
   if (alarm.name === "retry-sync") {
     console.log("[Musing] Retrying pending sync");
     await syncQuotes();
+  }
+  if (alarm.name === "check-stale-scrapes") {
+    console.log("[Musing] Checking for stale scrapes");
+    await checkAndTriggerProactiveScrapes();
+  }
+  // Handle proactive scrape timeout
+  if (alarm.name.startsWith("scrape-timeout-")) {
+    const tabId = parseInt(alarm.name.replace("scrape-timeout-", ""), 10);
+    if (backgroundScrapeTabs.has(tabId)) {
+      console.log("[Musing] Scrape timeout for tab", tabId);
+      await closeBackgroundScrapeTab(tabId);
+    }
   }
 });
 
@@ -78,7 +124,17 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 // Listen for messages from content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.type === "CONVERSATION_UPDATE") {
-    handleConversationUpdate(message.data);
+    handleConversationUpdate(message.data, sender);
+    sendResponse({ success: true });
+  }
+
+  if (message.type === "API_CAPTURE") {
+    handleApiCapture(message.data, sender);
+    sendResponse({ success: true });
+  }
+
+  if (message.type === "SCRAPE_COMPLETE") {
+    handleScrapeComplete(message.data, sender);
     sendResponse({ success: true });
   }
 
@@ -103,7 +159,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 /**
  * Handle conversation data from content scripts
  */
-async function handleConversationUpdate(conversationText) {
+async function handleConversationUpdate(conversationText, sender) {
   const { [KEYS.CONVERSATIONS]: existing = [] } = await chrome.storage.local.get(
     KEYS.CONVERSATIONS
   );
@@ -114,6 +170,12 @@ async function handleConversationUpdate(conversationText) {
 
   await chrome.storage.local.set({ [KEYS.CONVERSATIONS]: updated });
 
+  // Update scrape timestamp for this platform
+  const platform = detectPlatformFromUrl(sender?.tab?.url || "");
+  if (platform) {
+    await updateScrapeTimestamp(platform);
+  }
+
   // Check if we need to sync (with rate limiting)
   const { [KEYS.QUOTES]: quotes = [], [KEYS.LAST_SYNC]: lastSync = 0 } =
     await chrome.storage.local.get([KEYS.QUOTES, KEYS.LAST_SYNC]);
@@ -123,6 +185,155 @@ async function handleConversationUpdate(conversationText) {
   if (quotes.length < MIN_CACHE_SIZE && timeSinceLastSync > MIN_SYNC_INTERVAL_MS) {
     console.log("[Musing] Cache low, triggering sync");
     await syncQuotes();
+  }
+}
+
+/**
+ * Handle API capture from injector
+ */
+async function handleApiCapture(data, sender) {
+  const { platform, text, source } = data;
+
+  console.log("[Musing] API capture received:", platform, "length:", text?.length);
+
+  if (!text || text.length < 20) return;
+
+  // Store API captures separately (more structured data)
+  const { [KEYS.API_CAPTURES]: existing = [] } = await chrome.storage.local.get(KEYS.API_CAPTURES);
+
+  const capture = {
+    platform,
+    text: text.slice(0, 2000),
+    source,
+    timestamp: Date.now(),
+    url: sender?.tab?.url,
+  };
+
+  const updated = [capture, ...existing].slice(0, 10);
+  await chrome.storage.local.set({ [KEYS.API_CAPTURES]: updated });
+
+  // Also add to conversations for quote generation
+  await handleConversationUpdate(text, sender);
+}
+
+/**
+ * Handle scrape complete signal from content scripts
+ */
+async function handleScrapeComplete(data, sender) {
+  const { platform, sidebar } = data;
+  const tabId = sender?.tab?.id;
+
+  console.log("[Musing] Scrape complete:", platform, "sidebar items:", sidebar?.length);
+
+  // Update scrape timestamp
+  if (platform) {
+    await updateScrapeTimestamp(platform);
+  }
+
+  // Store sidebar data if provided
+  if (sidebar && sidebar.length > 0) {
+    const sidebarText = sidebar.slice(0, 20).join("\n");
+    await handleConversationUpdate(sidebarText, sender);
+  }
+
+  // If this was a background scrape tab, close it
+  if (tabId && backgroundScrapeTabs.has(tabId)) {
+    await closeBackgroundScrapeTab(tabId);
+  }
+}
+
+/**
+ * Detect platform from URL
+ */
+function detectPlatformFromUrl(url) {
+  if (!url) return null;
+  if (url.includes("claude.ai")) return "claude";
+  if (url.includes("chatgpt.com")) return "chatgpt";
+  if (url.includes("gemini.google.com")) return "gemini";
+  return null;
+}
+
+/**
+ * Update scrape timestamp for a platform
+ */
+async function updateScrapeTimestamp(platform) {
+  const { [KEYS.LAST_SCRAPE]: timestamps = {} } = await chrome.storage.local.get(KEYS.LAST_SCRAPE);
+  timestamps[platform] = Date.now();
+  await chrome.storage.local.set({ [KEYS.LAST_SCRAPE]: timestamps });
+}
+
+/**
+ * Check for stale scrapes and trigger proactive scraping
+ */
+async function checkAndTriggerProactiveScrapes() {
+  const { [KEYS.LAST_SCRAPE]: timestamps = {} } = await chrome.storage.local.get(KEYS.LAST_SCRAPE);
+  const now = Date.now();
+
+  for (const [platform, url] of Object.entries(PLATFORMS)) {
+    const lastScrape = timestamps[platform] || 0;
+    const timeSinceLastScrape = now - lastScrape;
+
+    if (timeSinceLastScrape > STALE_THRESHOLD_MS) {
+      console.log(`[Musing] ${platform} scrape is stale, triggering proactive scrape`);
+      await createBackgroundScrapeTab(platform, url);
+      // Only scrape one platform at a time to avoid overwhelming
+      break;
+    }
+  }
+}
+
+/**
+ * Create a background tab for proactive scraping
+ */
+async function createBackgroundScrapeTab(platform, url) {
+  // Check if we already have a background tab for this platform
+  for (const [tabId, info] of backgroundScrapeTabs) {
+    if (info.platform === platform) {
+      console.log(`[Musing] Background tab already exists for ${platform}`);
+      return;
+    }
+  }
+
+  try {
+    const tab = await chrome.tabs.create({
+      url,
+      active: false, // Open in background
+    });
+
+    backgroundScrapeTabs.set(tab.id, {
+      platform,
+      createdAt: Date.now(),
+    });
+
+    // Set timeout to close tab if scrape doesn't complete
+    chrome.alarms.create(`scrape-timeout-${tab.id}`, {
+      delayInMinutes: PROACTIVE_SCRAPE_TIMEOUT_MS / 60000,
+    });
+
+    console.log(`[Musing] Created background scrape tab for ${platform}:`, tab.id);
+  } catch (error) {
+    console.error(`[Musing] Failed to create background tab for ${platform}:`, error);
+  }
+}
+
+/**
+ * Close a background scrape tab
+ */
+async function closeBackgroundScrapeTab(tabId) {
+  if (!backgroundScrapeTabs.has(tabId)) return;
+
+  const info = backgroundScrapeTabs.get(tabId);
+  backgroundScrapeTabs.delete(tabId);
+
+  // Clear the timeout alarm
+  chrome.alarms.clear(`scrape-timeout-${tabId}`);
+
+  try {
+    await chrome.tabs.remove(tabId);
+    console.log(`[Musing] Closed background scrape tab for ${info.platform}:`, tabId);
+  } catch (error) {
+    // Tab might already be closed
+    console.debug(`[Musing] Tab ${tabId} already closed or error:`, error.message);
   }
 }
 

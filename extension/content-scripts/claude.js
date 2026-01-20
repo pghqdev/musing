@@ -124,6 +124,60 @@
   }
 
   /**
+   * Scrape conversation sidebar/history for broader context
+   */
+  function scrapeSidebar() {
+    const titles = [];
+
+    // Claude sidebar selectors for conversation list
+    const sidebarSelectors = [
+      "nav [data-testid='conversation-list'] a",
+      "nav a[href^='/chat/']",
+      "[class*='sidebar'] a[href^='/chat/']",
+      "[class*='ConversationList'] a",
+      "aside a[href^='/chat/']",
+    ];
+
+    for (const selector of sidebarSelectors) {
+      const elements = document.querySelectorAll(selector);
+      if (elements.length > 0) {
+        elements.forEach((el) => {
+          const text = el.innerText?.trim();
+          // Filter out navigation items, keep conversation titles
+          if (text && text.length > 3 && text.length < 200) {
+            titles.push(text);
+          }
+        });
+        if (titles.length > 0) break;
+      }
+    }
+
+    return [...new Set(titles)].slice(0, 20); // Dedupe and limit
+  }
+
+  /**
+   * Send scrape complete signal to background
+   */
+  function sendScrapeComplete(sidebarTitles) {
+    chrome.runtime.sendMessage(
+      {
+        type: "SCRAPE_COMPLETE",
+        data: {
+          platform: "claude",
+          sidebar: sidebarTitles,
+          url: window.location.href,
+          timestamp: Date.now(),
+        },
+      },
+      (response) => {
+        if (chrome.runtime.lastError) {
+          console.debug("[Musing] Failed to send scrape complete:", chrome.runtime.lastError);
+        }
+      }
+    );
+  }
+
+  /**
    * Log scrape to storage for debugging
    */
   async function logScrape(text) {
@@ -254,6 +308,15 @@
     setTimeout(() => {
       const text = scrapeConversation();
       sendUpdate(text);
+
+      // Also scrape sidebar for broader context
+      const sidebarTitles = scrapeSidebar();
+      if (sidebarTitles.length > 0) {
+        console.log("[Musing] Sidebar titles scraped:", sidebarTitles.length);
+      }
+
+      // Signal scrape complete (useful for proactive scraping)
+      sendScrapeComplete(sidebarTitles);
     }, 2000);
 
     // Start observing
@@ -264,6 +327,10 @@
       if (await checkEnabled()) {
         const text = scrapeConversation();
         sendUpdate(text);
+
+        // Periodically update sidebar too
+        const sidebarTitles = scrapeSidebar();
+        sendScrapeComplete(sidebarTitles);
       }
     }, SCRAPE_INTERVAL_MS);
 

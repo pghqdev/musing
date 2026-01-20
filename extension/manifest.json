@@ -2,11 +2,12 @@
   "manifest_version": 3,
   "name": "Musing",
   "version": "1.0.0",
-  "description": "Historical quotes relevant to your AI conversations, displayed on every new tab.",
+  "description": "let the wisdom of the past guide your present...",
   "minimum_chrome_version": "110",
   "permissions": [
     "storage",
-    "alarms"
+    "alarms",
+    "tabs"
   ],
   "host_permissions": [
     "https://claude.ai/*",
@@ -20,21 +21,31 @@
     "service_worker": "background.js",
     "type": "module"
   },
+  "web_accessible_resources": [
+    {
+      "resources": ["inject/api-interceptor.js"],
+      "matches": [
+        "https://claude.ai/*",
+        "https://chatgpt.com/*",
+        "https://gemini.google.com/*"
+      ]
+    }
+  ],
   "content_scripts": [
     {
       "matches": ["https://claude.ai/*"],
-      "js": ["content-scripts/claude.js"],
-      "run_at": "document_idle"
+      "js": ["content-scripts/injector.js", "content-scripts/claude.js"],
+      "run_at": "document_start"
     },
     {
       "matches": ["https://chatgpt.com/*"],
-      "js": ["content-scripts/chatgpt.js"],
-      "run_at": "document_idle"
+      "js": ["content-scripts/injector.js", "content-scripts/chatgpt.js"],
+      "run_at": "document_start"
     },
     {
       "matches": ["https://gemini.google.com/app/*"],
-      "js": ["content-scripts/gemini.js"],
-      "run_at": "document_idle"
+      "js": ["content-scripts/injector.js", "content-scripts/gemini.js"],
+      "run_at": "document_start"
     }
   ],
   "icons": {

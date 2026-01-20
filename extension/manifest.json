@@ -18,17 +18,12 @@
     "newtab": "newtab/newtab.html"
   },
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
   "web_accessible_resources": [
     {
-      "resources": ["inject/api-interceptor.js"],
-      "matches": [
-        "https://claude.ai/*",
-        "https://chatgpt.com/*",
-        "https://gemini.google.com/*"
-      ]
+      "resources": ["inject/api-interceptor.js", "data/quotes.json"],
+      "matches": ["<all_urls>"]
     }
   ],
   "content_scripts": [

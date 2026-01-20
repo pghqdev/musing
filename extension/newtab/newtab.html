@@ -18,9 +18,10 @@
       align-items: center;
       justify-content: center;
       font-family: 'Georgia', 'Times New Roman', serif;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-      color: #e8e8e8;
+      background: light-dark(#fff, #202124);
+      color: light-dark(#202124, #e8eaed);
       padding: 2rem;
+      color-scheme: light dark;
     }
 
     .container {
@@ -46,14 +47,14 @@
       font-weight: 400;
       margin-bottom: 1.5rem;
       font-style: italic;
-      color: #f0f0f0;
-      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      color: light-dark(#202124, #f0f0f0);
+      text-shadow: light-dark(none, 0 2px 4px rgba(0, 0, 0, 0.2));
     }
 
     .quote::before {
       content: '"';
       font-size: 3rem;
-      color: #4a9eff;
+      color: light-dark(#1a73e8, #8ab4f8);
       line-height: 0;
       vertical-align: -0.4em;
       margin-right: 0.1em;
@@ -62,7 +63,7 @@
     .quote::after {
       content: '"';
       font-size: 3rem;
-      color: #4a9eff;
+      color: light-dark(#1a73e8, #8ab4f8);
       line-height: 0;
       vertical-align: -0.4em;
       margin-left: 0.1em;
@@ -70,7 +71,7 @@
 
     .author {
       font-size: 1.1rem;
-      color: #a0a0a0;
+      color: light-dark(#5f6368, #9aa0a6);
       font-style: normal;
       letter-spacing: 0.05em;
     }
@@ -83,11 +84,11 @@
       position: fixed;
       bottom: 1.5rem;
       font-size: 0.75rem;
-      color: #606060;
+      color: light-dark(#5f6368, #9aa0a6);
     }
 
     .footer a {
-      color: #4a9eff;
+      color: light-dark(#1a73e8, #8ab4f8);
       text-decoration: none;
     }
 
@@ -111,21 +112,22 @@
       max-width: 500px;
       padding: 0.75rem 1.25rem;
       font-size: 1rem;
-      border: 1px solid #333;
+      border: 1px solid light-dark(#dfe1e5, #5f6368);
       border-radius: 24px;
-      background: rgba(255, 255, 255, 0.05);
-      color: #e8e8e8;
+      background: light-dark(#fff, rgba(255, 255, 255, 0.05));
+      color: inherit;
       outline: none;
-      transition: border-color 0.2s, background 0.2s;
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
     }
 
     .search-input:focus {
-      border-color: #4a9eff;
-      background: rgba(255, 255, 255, 0.1);
+      border-color: light-dark(#4a9eff, #8ab4f8);
+      background: light-dark(#fff, rgba(255, 255, 255, 0.1));
+      box-shadow: light-dark(0 1px 6px rgba(32, 33, 36, 0.28), none);
     }
 
     .search-input::placeholder {
-      color: #707070;
+      color: light-dark(#9aa0a6, #9aa0a6);
     }
   </style>
 </head>
@@ -146,7 +148,7 @@
   </div>
 
   <div class="footer">
-    Wisdom from your AI conversations · <a href="#" id="refresh">New quote</a>
+    <a href="#" id="refresh">refresh</a>
   </div>
 
   <script src="newtab.js"></script>

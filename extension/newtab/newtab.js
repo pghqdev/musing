@@ -6,11 +6,21 @@
 (function () {
   "use strict";
 
+  const SETTINGS_KEY = "musing_settings";
+  const SEARCH_URLS = {
+    google: "https://www.google.com/search?q=",
+    duckduckgo: "https://duckduckgo.com/?q=",
+    bing: "https://www.bing.com/search?q=",
+    brave: "https://search.brave.com/search?q=",
+  };
+
   const quoteEl = document.getElementById("quote");
   const authorEl = document.getElementById("author");
   const containerEl = document.getElementById("container");
   const searchEl = document.getElementById("search");
   const refreshEl = document.getElementById("refresh");
+
+  let searchEngine = "google";
 
   /**
    * Display a quote
@@ -58,10 +68,23 @@
           const url = query.startsWith("http") ? query : `https://${query}`;
           window.location.href = url;
         } else {
-          window.location.href = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+          const searchUrl = SEARCH_URLS[searchEngine] || SEARCH_URLS.google;
+          window.location.href = `${searchUrl}${encodeURIComponent(query)}`;
         }
       }
     }
+  }
+
+  /**
+   * Load settings
+   */
+  async function loadSettings() {
+    const { [SETTINGS_KEY]: settings = {} } = await chrome.storage.local.get(SETTINGS_KEY);
+    searchEngine = settings.searchEngine || "google";
+
+    // Update placeholder to show current search engine
+    const engineNames = { google: "Google", duckduckgo: "DuckDuckGo", bing: "Bing", brave: "Brave" };
+    searchEl.placeholder = `Search ${engineNames[searchEngine] || "Google"}...`;
   }
 
   /**
@@ -76,6 +99,7 @@
   searchEl.addEventListener("keydown", handleSearch);
   refreshEl.addEventListener("click", handleRefresh);
 
-  // Load quote on page load
+  // Load settings and quote on page load
+  loadSettings();
   loadQuote();
 })();

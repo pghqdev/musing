@@ -6,10 +6,21 @@
 (function () {
   "use strict";
 
+  const SETTINGS_KEY = "musing_settings";
   const SCRAPE_INTERVAL_MS = 30000; // 30 seconds
   const MAX_TEXT_LENGTH = 5000;
 
   let lastScrapedText = "";
+  let isEnabled = true;
+
+  /**
+   * Check if ChatGPT scraping is enabled
+   */
+  async function checkEnabled() {
+    const { [SETTINGS_KEY]: settings = {} } = await chrome.storage.local.get(SETTINGS_KEY);
+    isEnabled = settings.enableChatGPT ?? true;
+    return isEnabled;
+  }
 
   /**
    * Extract conversation text from ChatGPT's UI
@@ -104,20 +115,33 @@
     return observer;
   }
 
-  // Initial scrape after page load
-  setTimeout(() => {
-    const text = scrapeConversation();
-    sendUpdate(text);
-  }, 2000);
+  // Initialize
+  async function init() {
+    const enabled = await checkEnabled();
+    if (!enabled) {
+      console.log("[Musing] ChatGPT scraping disabled in settings");
+      return;
+    }
 
-  // Start observing
-  observeChanges();
+    // Initial scrape after page load
+    setTimeout(() => {
+      const text = scrapeConversation();
+      sendUpdate(text);
+    }, 2000);
 
-  // Periodic scrape as backup
-  setInterval(() => {
-    const text = scrapeConversation();
-    sendUpdate(text);
-  }, SCRAPE_INTERVAL_MS);
+    // Start observing
+    observeChanges();
 
-  console.log("[Musing] ChatGPT content script loaded");
+    // Periodic scrape as backup
+    setInterval(async () => {
+      if (await checkEnabled()) {
+        const text = scrapeConversation();
+        sendUpdate(text);
+      }
+    }, SCRAPE_INTERVAL_MS);
+
+    console.log("[Musing] ChatGPT content script loaded");
+  }
+
+  init();
 })();

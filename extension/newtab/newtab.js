@@ -16,6 +16,7 @@
     chatgpt: "https://chatgpt.com/?q=",
     claude: "https://claude.ai/new?q=",
     gemini: "https://gemini.google.com/app?q=",
+    namecheap: "https://www.namecheap.com/domains/registration/results/?domain=",
   };
 
   const ENGINE_NAMES = {
@@ -25,6 +26,7 @@
     chatgpt: "ChatGPT",
     claude: "Claude",
     gemini: "Gemini",
+    namecheap: "Namecheap",
   };
 
   const ENGINE_ICONS = {
@@ -34,10 +36,12 @@
     chatgpt: "https://chatgpt.com/favicon.ico",
     claude: "https://claude.ai/favicon.ico",
     gemini: "https://www.google.com/s2/favicons?domain=gemini.google.com&sz=32",
+    namecheap: "https://www.namecheap.com/favicon.ico",
   };
 
   const SEARCH_ENGINES = ["google", "duckduckgo", "perplexity"];
   const AI_PLATFORMS = ["chatgpt", "claude", "gemini"];
+  const TOOLS = ["namecheap"];
 
   // Local fallback quotes (used when service worker is unavailable)
   const LOCAL_FALLBACKS = [
@@ -233,6 +237,20 @@
     engineDropdownEl.appendChild(aiLabel);
 
     AI_PLATFORMS.forEach((key) => {
+      engineDropdownEl.appendChild(createOption(key));
+    });
+
+    // Tools section
+    const toolsDivider = document.createElement("div");
+    toolsDivider.className = "engine-divider";
+    engineDropdownEl.appendChild(toolsDivider);
+
+    const toolsLabel = document.createElement("div");
+    toolsLabel.className = "engine-section-label";
+    toolsLabel.textContent = "Tools";
+    engineDropdownEl.appendChild(toolsLabel);
+
+    TOOLS.forEach((key) => {
       engineDropdownEl.appendChild(createOption(key));
     });
   }

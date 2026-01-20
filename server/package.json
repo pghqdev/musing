@@ -6,10 +6,12 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "db:create": "wrangler d1 create musing",
-    "db:init": "wrangler d1 execute musing --file=./schema.sql",
-    "db:seed": "wrangler d1 execute musing --file=./seed.sql",
+    "db:init": "wrangler d1 execute musing --remote --file=./schema.sql",
+    "db:seed": "wrangler d1 execute musing --remote --file=./seed.sql",
+    "db:reset": "wrangler d1 execute musing --remote --file=./reset.sql",
     "db:init:local": "wrangler d1 execute musing --local --file=./schema.sql",
-    "db:seed:local": "wrangler d1 execute musing --local --file=./seed.sql"
+    "db:seed:local": "wrangler d1 execute musing --local --file=./seed.sql",
+    "db:reset:local": "wrangler d1 execute musing --local --file=./reset.sql"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240117.0",

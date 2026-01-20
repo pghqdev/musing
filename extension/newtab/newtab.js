@@ -123,8 +123,7 @@
   /**
    * Handle refresh click
    */
-  function handleRefresh(event) {
-    event.preventDefault();
+  function handleRefresh() {
     loadQuote();
   }
 

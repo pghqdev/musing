@@ -164,6 +164,193 @@
     .search-input::placeholder {
       color: light-dark(#9aa0a6, #9aa0a6);
     }
+
+    /* Onboarding overlay */
+    .onboarding-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .onboarding-overlay.show {
+      display: flex;
+    }
+
+    .onboarding-card {
+      background: light-dark(#fff, #2d2d30);
+      border-radius: 16px;
+      padding: 2rem;
+      max-width: 480px;
+      width: 90%;
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.3s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .onboarding-step {
+      display: none;
+    }
+
+    .onboarding-step.active {
+      display: block;
+    }
+
+    .onboarding-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .onboarding-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: light-dark(#202124, #e8eaed);
+    }
+
+    .onboarding-text {
+      font-size: 1rem;
+      color: light-dark(#5f6368, #9aa0a6);
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+    }
+
+    .onboarding-image {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .onboarding-tip {
+      background: light-dark(#f8f9fa, #3c3c3c);
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+      color: light-dark(#5f6368, #9aa0a6);
+      text-align: left;
+    }
+
+    .onboarding-tip strong {
+      color: light-dark(#202124, #e8eaed);
+    }
+
+    .onboarding-buttons {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .onboarding-btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 24px;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .onboarding-btn-primary {
+      background: #4a9eff;
+      color: #fff;
+    }
+
+    .onboarding-btn-primary:hover {
+      background: #3a8eef;
+    }
+
+    .onboarding-btn-secondary {
+      background: light-dark(#f1f3f4, #3c3c3c);
+      color: light-dark(#5f6368, #9aa0a6);
+    }
+
+    .onboarding-btn-secondary:hover {
+      background: light-dark(#e8eaed, #4a4a4a);
+    }
+
+    .onboarding-dots {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      margin-top: 1.5rem;
+    }
+
+    .onboarding-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: light-dark(#dadce0, #5f6368);
+      transition: background 0.2s;
+    }
+
+    .onboarding-dot.active {
+      background: #4a9eff;
+    }
+
+    .onboarding-arrow {
+      display: inline-block;
+      margin: 0 0.25rem;
+    }
+
+    /* Instruction steps */
+    .onboarding-instructions {
+      background: light-dark(#f8f9fa, #3c3c3c);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .instruction-step {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-align: left;
+    }
+
+    .instruction-number {
+      width: 28px;
+      height: 28px;
+      background: #4a9eff;
+      color: #fff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.875rem;
+      flex-shrink: 0;
+    }
+
+    .instruction-text {
+      font-size: 0.9375rem;
+      color: light-dark(#202124, #e8eaed);
+    }
+
+    .instruction-arrow {
+      font-size: 1.25rem;
+      color: light-dark(#9aa0a6, #5f6368);
+      margin: 0.5rem 0 0.5rem 0.6rem;
+    }
   </style>
 </head>
 <body>
@@ -187,6 +374,89 @@
 
   <div class="footer">
     <a href="#" id="refresh">refresh</a>
+  </div>
+
+  <!-- Onboarding overlay -->
+  <div class="onboarding-overlay" id="onboarding">
+    <div class="onboarding-card">
+      <!-- Step 1: Welcome -->
+      <div class="onboarding-step active" data-step="1">
+        <div class="onboarding-icon">✨</div>
+        <h2 class="onboarding-title">Welcome to Musing</h2>
+        <p class="onboarding-text">
+          Your new tab now shows inspiring quotes from history's greatest thinkers,
+          tailored to your AI conversations.
+        </p>
+        <div class="onboarding-tip">
+          <strong>How it works:</strong> As you chat with Claude or ChatGPT,
+          Musing learns your interests and shows relevant quotes here.
+        </div>
+        <div class="onboarding-buttons">
+          <button class="onboarding-btn onboarding-btn-secondary" id="onboarding-skip">Skip</button>
+          <button class="onboarding-btn onboarding-btn-primary" id="onboarding-next-1">Next <span class="onboarding-arrow">→</span></button>
+        </div>
+        <div class="onboarding-dots">
+          <div class="onboarding-dot active"></div>
+          <div class="onboarding-dot"></div>
+          <div class="onboarding-dot"></div>
+        </div>
+      </div>
+
+      <!-- Step 2: Hide Chrome footer -->
+      <div class="onboarding-step" data-step="2">
+        <h2 class="onboarding-title">Clean Up Your View</h2>
+        <p class="onboarding-text">
+          For a cleaner experience, hide Chrome's default shortcuts bar.
+        </p>
+        <div class="onboarding-instructions">
+          <div class="instruction-step">
+            <span class="instruction-number">1</span>
+            <span class="instruction-text">Right-click anywhere on this page</span>
+          </div>
+          <div class="instruction-arrow">↓</div>
+          <div class="instruction-step">
+            <span class="instruction-number">2</span>
+            <span class="instruction-text">Select "Hide footer on New Tab page"</span>
+          </div>
+          <div class="instruction-arrow">↓</div>
+          <div class="instruction-step">
+            <span class="instruction-number">3</span>
+            <span class="instruction-text">Enjoy a clean, minimal view!</span>
+          </div>
+        </div>
+        <div class="onboarding-buttons">
+          <button class="onboarding-btn onboarding-btn-secondary" id="onboarding-back-2"><span class="onboarding-arrow">←</span> Back</button>
+          <button class="onboarding-btn onboarding-btn-primary" id="onboarding-next-2">Next <span class="onboarding-arrow">→</span></button>
+        </div>
+        <div class="onboarding-dots">
+          <div class="onboarding-dot"></div>
+          <div class="onboarding-dot active"></div>
+          <div class="onboarding-dot"></div>
+        </div>
+      </div>
+
+      <!-- Step 3: Finish -->
+      <div class="onboarding-step" data-step="3">
+        <div class="onboarding-icon">🎉</div>
+        <h2 class="onboarding-title">You're All Set!</h2>
+        <p class="onboarding-text">
+          Start chatting with Claude or ChatGPT, and watch your quotes become
+          more personalized over time.
+        </p>
+        <div class="onboarding-tip">
+          <strong>Settings:</strong> Click the Musing extension icon in your
+          toolbar to adjust settings or sync manually.
+        </div>
+        <div class="onboarding-buttons">
+          <button class="onboarding-btn onboarding-btn-primary" id="onboarding-finish">Get Started</button>
+        </div>
+        <div class="onboarding-dots">
+          <div class="onboarding-dot"></div>
+          <div class="onboarding-dot"></div>
+          <div class="onboarding-dot active"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="newtab.js"></script>

@@ -481,81 +481,6 @@
       margin-top: 32px;
     }
 
-    /* Privacy Modal */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .modal.show {
-      display: flex;
-    }
-
-    .modal-content {
-      background: var(--bg-secondary);
-      border-radius: var(--radius);
-      max-width: 500px;
-      width: 90%;
-      max-height: 80vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 20px 24px;
-      border-bottom: 1px solid var(--bg-tertiary);
-    }
-
-    .modal-header h3 {
-      font-size: 1.1rem;
-    }
-
-    .modal-close {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: var(--text-secondary);
-      padding: 0;
-      line-height: 1;
-    }
-
-    .modal-close:hover {
-      color: var(--text-primary);
-    }
-
-    .modal-body {
-      padding: 24px;
-      overflow-y: auto;
-    }
-
-    .modal-body h4 {
-      font-size: 0.95rem;
-      margin: 20px 0 8px;
-    }
-
-    .modal-body h4:first-child {
-      margin-top: 0;
-    }
-
-    .modal-body p {
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-      line-height: 1.6;
-    }
-
     /* Animations */
     @keyframes fadeInUp {
       from {
@@ -808,7 +733,8 @@
         <span>musing</span>
       </div>
       <div class="footer-links">
-        <a href="#" id="privacy-link">Privacy</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
       </div>
       <div class="footer-social">
         <a href="https://musing.wiki" target="_blank" title="Website">
@@ -827,32 +753,6 @@
     </div>
     <p class="copyright">&copy; 2026 Musing. Built in Japan with quiet contemplation.</p>
   </footer>
-
-  <!-- Privacy Modal -->
-  <div class="modal" id="privacy-modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Privacy Policy</h3>
-        <button class="modal-close" id="privacy-close">&times;</button>
-      </div>
-      <div class="modal-body">
-        <h4>100% Local Processing</h4>
-        <p>Musing runs entirely on your device. No data is ever sent to external servers. Theme extraction and quote matching happen locally in your browser.</p>
-
-        <h4>What We Collect</h4>
-        <p>We extract themes from your AI conversations to find relevant historical quotes. All processing happens locally — your conversations never leave your device.</p>
-
-        <h4>Data Storage</h4>
-        <p>Conversation snippets and extracted themes are stored only in your browser's local storage. Nothing is transmitted externally.</p>
-
-        <h4>Your Control</h4>
-        <p>Disable data collection anytime using the extension settings. Clear all data via the extension popup, or remove the extension to delete everything.</p>
-
-        <h4>Have Feedback?</h4>
-        <p>We'd love to hear from you. Contact us at hello@musing.wiki</p>
-      </div>
-    </div>
-  </div>
 
   <script>
     // Rotating quotes for the hero section
@@ -955,31 +855,6 @@
     quoteText.style.transition = 'opacity 0.3s ease';
     quoteAuthor.style.transition = 'opacity 0.3s ease';
 
-    // Privacy modal
-    const privacyLink = document.getElementById('privacy-link');
-    const privacyModal = document.getElementById('privacy-modal');
-    const privacyClose = document.getElementById('privacy-close');
-
-    privacyLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      privacyModal.classList.add('show');
-    });
-
-    privacyClose.addEventListener('click', () => {
-      privacyModal.classList.remove('show');
-    });
-
-    privacyModal.addEventListener('click', (e) => {
-      if (e.target === privacyModal) {
-        privacyModal.classList.remove('show');
-      }
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && privacyModal.classList.contains('show')) {
-        privacyModal.classList.remove('show');
-      }
-    });
   </script>
 </body>
 </html>

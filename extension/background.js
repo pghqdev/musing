@@ -7,7 +7,7 @@
  */
 
 // Import local modules
-importScripts("lib/theme-extractor.js", "lib/quotes-db.js");
+importScripts("lib/theme-extractor.js", "lib/quotes-db.js", "lib/ai-reason-generator.js");
 
 const MIN_CACHE_SIZE = 5;
 const DEFAULT_CACHE_SIZE = 15;
@@ -23,6 +23,7 @@ const KEYS = {
   EXTRACTED_THEMES: "extracted_themes",
   LAST_SCRAPE: "last_scrape_timestamps",
   API_CAPTURES: "api_captures",
+  AI_SETTINGS: "ai_settings",
 };
 
 // Proactive scraping configuration
@@ -381,14 +382,23 @@ async function refreshLocalQuoteCache(themes = []) {
 
 /**
  * Get a quote to display, avoiding recently shown ones
- * Uses local quote database - no network requests
+ * Uses local quote database - no network requests for base functionality
+ * Optionally uses AI API for personalized reasons if enabled
  */
 async function getQuoteForDisplay() {
   const {
     [KEYS.QUOTES]: quotes = [],
     [KEYS.SHOWN_QUOTE_IDS]: shownIds = [],
     [KEYS.EXTRACTED_THEMES]: themes = [],
-  } = await chrome.storage.local.get([KEYS.QUOTES, KEYS.SHOWN_QUOTE_IDS, KEYS.EXTRACTED_THEMES]);
+    [KEYS.CONVERSATIONS]: conversations = [],
+    [KEYS.AI_SETTINGS]: aiSettings = {},
+  } = await chrome.storage.local.get([
+    KEYS.QUOTES,
+    KEYS.SHOWN_QUOTE_IDS,
+    KEYS.EXTRACTED_THEMES,
+    KEYS.CONVERSATIONS,
+    KEYS.AI_SETTINGS,
+  ]);
 
   // Ensure quotes are loaded from JSON
   await ensureQuotesLoaded();
@@ -418,5 +428,25 @@ async function getQuoteForDisplay() {
   const updatedShown = [quote.id, ...shownIds].slice(0, 20);
   await chrome.storage.local.set({ [KEYS.SHOWN_QUOTE_IDS]: updatedShown });
 
-  return quote;
+  // Find matched themes between user's extracted themes and quote's themes
+  const userThemes = new Set(themes.map((t) => t.toLowerCase()));
+  const matchedThemes = (quote.themes || []).filter((t) => userThemes.has(t.toLowerCase()));
+
+  // Try to generate AI reason if enabled
+  let aiReason = null;
+  const apiKey = aiSettings.aiApiKeys?.[aiSettings.aiProvider] || aiSettings.aiApiKey;
+  if (aiSettings.aiEnabled && apiKey && conversations.length > 0) {
+    try {
+      aiReason = await generateAIReason(quote, conversations, aiSettings);
+      console.log("[Musing] AI reason generated:", aiReason ? "success" : "fallback to themes");
+    } catch (error) {
+      console.warn("[Musing] AI reason generation error:", error.message);
+    }
+  }
+
+  return {
+    ...quote,
+    matchedThemes: matchedThemes.length > 0 ? matchedThemes : null,
+    aiReason: aiReason,
+  };
 }

@@ -14,7 +14,10 @@
   "host_permissions": [
     "https://claude.ai/*",
     "https://chatgpt.com/*",
-    "https://gemini.google.com/app/*"
+    "https://gemini.google.com/app/*",
+    "https://api.groq.com/*",
+    "https://api.anthropic.com/*",
+    "https://api.openai.com/*"
   ],
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"

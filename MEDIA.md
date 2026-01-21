@@ -98,4 +98,4 @@
 | Quotes matched from database | Your browser |
 | Data sent to servers | Never |
 
-No accounts. No tracking. No network requests. Built in Japan.
+No accounts. No tracking. No network requests. 🇯🇵 Built in Japan.

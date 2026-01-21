@@ -31,7 +31,26 @@
   }
 
   /**
-   * Sanitize text - remove potentially sensitive patterns
+   * Common UI noise patterns to filter out
+   */
+  const UI_NOISE_PATTERNS = [
+    // Gemini-specific UI
+    /^(New chat|Upgrade|My stuff|Gems|Chats|Settings and help)$/i,
+    /^(Conversation with Gemini|Hi \w+|Where should we start\?)$/i,
+    /^(Create image|Write anything|Help me learn|Boost my day)$/i,
+    /^(Tools|Fast|Show more|Show less|Copy|Share|Edit)$/i,
+    // Common navigation/UI
+    /^(Home|Settings|Profile|Menu|Close|Cancel|OK|Submit)$/i,
+    /^(Loading|Please wait|Thinking|Generating)\.{0,3}$/i,
+    /^(Today|Yesterday|Previous \d+ days|Last week|Last month)$/i,
+    // Single emoji or very short
+    /^[\p{Emoji}\s]{1,5}$/u,
+    // Just numbers or punctuation
+    /^[\d\s\.\,\-\:\;]+$/,
+  ];
+
+  /**
+   * Sanitize text - remove sensitive patterns and UI noise
    */
   function sanitizeText(text) {
     if (!text) return "";
@@ -55,7 +74,27 @@
     // Remove potential phone numbers
     text = text.replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, "[phone]");
 
-    return text;
+    // Filter out UI noise line by line
+    const lines = text.split("\n");
+    const filteredLines = lines.filter((line) => {
+      const trimmed = line.trim();
+      // Skip empty or very short lines
+      if (!trimmed || trimmed.length < 3) return false;
+      // Skip lines matching UI noise patterns
+      for (const pattern of UI_NOISE_PATTERNS) {
+        if (pattern.test(trimmed)) return false;
+      }
+      // Skip very short lines that look like menu items (< 20 chars, no spaces)
+      if (trimmed.length < 20 && !trimmed.includes(" ")) return false;
+      return true;
+    });
+
+    // Remove duplicate consecutive lines
+    const deduped = filteredLines.filter((line, i, arr) => {
+      return i === 0 || line.trim() !== arr[i - 1].trim();
+    });
+
+    return deduped.join("\n").trim();
   }
 
   /**
@@ -132,6 +171,20 @@
   }
 
   /**
+   * Check if text is a valid conversation title (not UI noise)
+   */
+  function isValidTitle(text) {
+    if (!text || text.length < 5 || text.length > 200) return false;
+    // Filter out UI noise
+    for (const pattern of UI_NOISE_PATTERNS) {
+      if (pattern.test(text)) return false;
+    }
+    // Filter out short single-word items that look like menu items
+    if (text.length < 15 && !text.includes(" ")) return false;
+    return true;
+  }
+
+  /**
    * Scrape conversation sidebar/history for broader context
    */
   function scrapeSidebar() {
@@ -151,8 +204,7 @@
       if (elements.length > 0) {
         elements.forEach((el) => {
           const text = el.innerText?.trim();
-          // Filter out navigation items, keep conversation titles
-          if (text && text.length > 3 && text.length < 200) {
+          if (isValidTitle(text)) {
             titles.push(text);
           }
         });
@@ -259,6 +311,13 @@
    * Observe DOM changes for new messages
    */
   function observeChanges() {
+    // Ensure document.body exists before observing
+    if (!document.body) {
+      console.log("[Musing] document.body not ready, retrying...");
+      setTimeout(observeChanges, 100);
+      return null;
+    }
+
     observer = new MutationObserver((mutations) => {
       const hasNewContent = mutations.some(
         (m) => m.addedNodes.length > 0 || m.type === "characterData"

@@ -3,6 +3,7 @@
  */
 
 const SETTINGS_KEY = "musing_settings";
+const AI_SETTINGS_KEY = "ai_settings";
 const LAST_SYNC_KEY = "last_sync_timestamp";
 const CONVERSATIONS_KEY = "recent_conversations";
 const QUOTES_KEY = "cached_quotes";
@@ -13,6 +14,35 @@ const DEFAULTS = {
   enableClaude: true,
   enableChatGPT: true,
   enableGemini: true,
+};
+
+const AI_DEFAULTS = {
+  aiEnabled: false,
+  aiProvider: "groq",
+  aiModel: "llama-3.3-70b-versatile",
+  aiApiKeys: {
+    groq: "",
+    claude: "",
+    openai: "",
+  },
+};
+
+// Model options for each provider
+const PROVIDER_MODELS = {
+  groq: [
+    { value: "llama-3.3-70b-versatile", label: "Llama 3.3 70B" },
+    { value: "llama-3.1-8b-instant", label: "Llama 3.1 8B" },
+    { value: "mixtral-8x7b-32768", label: "Mixtral 8x7B" },
+  ],
+  claude: [
+    { value: "claude-3-haiku-20240307", label: "Claude 3 Haiku" },
+    { value: "claude-3-5-sonnet-20241022", label: "Claude 3.5 Sonnet" },
+  ],
+  openai: [
+    { value: "gpt-4o-mini", label: "GPT-4o Mini" },
+    { value: "gpt-4o", label: "GPT-4o" },
+    { value: "gpt-3.5-turbo", label: "GPT-3.5 Turbo" },
+  ],
 };
 
 // Settings tab elements
@@ -26,6 +56,25 @@ const syncBtnEl = document.getElementById("sync-btn");
 const privacyLinkEl = document.getElementById("privacy-link");
 const privacyModalEl = document.getElementById("privacy-modal");
 const privacyCloseEl = document.getElementById("privacy-close");
+
+// AI settings elements
+const enableAiEl = document.getElementById("enable-ai");
+const aiSettingsPanelEl = document.getElementById("ai-settings-panel");
+const aiProviderEl = document.getElementById("ai-provider");
+const aiModelEl = document.getElementById("ai-model");
+const aiApiKeyEl = document.getElementById("ai-api-key");
+const apiKeyToggleEl = document.getElementById("api-key-toggle");
+const apiKeyLabelEl = document.getElementById("api-key-label");
+const getKeyLinkEl = document.getElementById("get-key-link");
+const advancedToggleEl = document.getElementById("advanced-toggle");
+const advancedPanelEl = document.getElementById("advanced-panel");
+
+// Provider-specific API key links
+const PROVIDER_KEY_URLS = {
+  groq: "https://console.groq.com/keys",
+  claude: "https://console.anthropic.com/settings/keys",
+  openai: "https://platform.openai.com/api-keys",
+};
 
 // Logs tab elements
 const logsEmptyEl = document.getElementById("logs-empty");
@@ -66,6 +115,213 @@ async function saveSettings() {
 
   await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
   showStatus("Saved", "success");
+}
+
+/**
+ * Load AI settings from storage
+ */
+async function loadAiSettings() {
+  const { [AI_SETTINGS_KEY]: aiSettings = AI_DEFAULTS } = await chrome.storage.local.get(AI_SETTINGS_KEY);
+
+  enableAiEl.checked = aiSettings.aiEnabled ?? AI_DEFAULTS.aiEnabled;
+  aiProviderEl.value = aiSettings.aiProvider || AI_DEFAULTS.aiProvider;
+
+  // Get the current provider and load its API key
+  const currentProvider = aiSettings.aiProvider || AI_DEFAULTS.aiProvider;
+  const apiKeys = aiSettings.aiApiKeys || AI_DEFAULTS.aiApiKeys;
+
+  // Support legacy single apiKey format (migrate to per-provider)
+  if (aiSettings.aiApiKey && !aiSettings.aiApiKeys) {
+    aiApiKeyEl.value = aiSettings.aiApiKey;
+  } else {
+    aiApiKeyEl.value = apiKeys[currentProvider] || "";
+  }
+
+  // Update model options and provider UI for current provider
+  updateModelOptions(currentProvider);
+  updateProviderUI(currentProvider);
+
+  // Set saved model if available
+  if (aiSettings.aiModel) {
+    aiModelEl.value = aiSettings.aiModel;
+  }
+
+  // Show/hide AI settings panel based on toggle
+  updateAiPanelVisibility();
+}
+
+/**
+ * Save AI settings to storage
+ */
+async function saveAiSettings() {
+  // First get existing settings to preserve other provider keys
+  const { [AI_SETTINGS_KEY]: existingSettings = AI_DEFAULTS } = await chrome.storage.local.get(AI_SETTINGS_KEY);
+
+  // Get existing keys or initialize
+  const existingKeys = existingSettings.aiApiKeys || AI_DEFAULTS.aiApiKeys;
+
+  // Update the key for the current provider
+  const currentProvider = aiProviderEl.value;
+  const updatedKeys = {
+    ...existingKeys,
+    [currentProvider]: aiApiKeyEl.value,
+  };
+
+  const aiSettings = {
+    aiEnabled: enableAiEl.checked,
+    aiProvider: currentProvider,
+    aiModel: aiModelEl.value,
+    aiApiKeys: updatedKeys,
+  };
+
+  await chrome.storage.local.set({ [AI_SETTINGS_KEY]: aiSettings });
+  showStatus("Saved", "success");
+}
+
+/**
+ * Update model options based on selected provider
+ */
+function updateModelOptions(provider) {
+  const models = PROVIDER_MODELS[provider] || PROVIDER_MODELS.groq;
+
+  // Clear existing options
+  aiModelEl.replaceChildren();
+
+  // Add new options
+  models.forEach((model) => {
+    const option = document.createElement("option");
+    option.value = model.value;
+    option.textContent = model.label;
+    aiModelEl.appendChild(option);
+  });
+}
+
+/**
+ * Update AI settings panel visibility
+ */
+function updateAiPanelVisibility() {
+  aiSettingsPanelEl.classList.toggle("show", enableAiEl.checked);
+}
+
+/**
+ * Handle provider change
+ */
+async function handleProviderChange() {
+  const newProvider = aiProviderEl.value;
+
+  // Save current key before switching
+  await saveAiSettings();
+
+  // Load the key for the new provider
+  const { [AI_SETTINGS_KEY]: aiSettings = AI_DEFAULTS } = await chrome.storage.local.get(AI_SETTINGS_KEY);
+  const apiKeys = aiSettings.aiApiKeys || AI_DEFAULTS.aiApiKeys;
+  aiApiKeyEl.value = apiKeys[newProvider] || "";
+
+  // Update UI for new provider
+  updateModelOptions(newProvider);
+  updateProviderUI(newProvider);
+}
+
+/**
+ * Update provider-specific UI (label and key link)
+ */
+function updateProviderUI(provider) {
+  // Update API key label
+  const providerNames = {
+    groq: "Groq",
+    claude: "Claude",
+    openai: "OpenAI",
+  };
+  apiKeyLabelEl.textContent = `${providerNames[provider] || "API"} API Key`;
+
+  // Update "Get free key" link
+  const url = PROVIDER_KEY_URLS[provider] || PROVIDER_KEY_URLS.groq;
+  getKeyLinkEl.href = url;
+
+  // Update link text based on provider (Groq is free, others are paid)
+  getKeyLinkEl.textContent = provider === "groq" ? "Get free key" : "Get API key";
+
+  // Re-add the external link icon
+  const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  icon.setAttribute("viewBox", "0 0 24 24");
+  icon.setAttribute("width", "10");
+  icon.setAttribute("height", "10");
+  icon.setAttribute("fill", "none");
+  icon.setAttribute("stroke", "currentColor");
+  icon.setAttribute("stroke-width", "2");
+  icon.setAttribute("stroke-linecap", "round");
+  icon.setAttribute("stroke-linejoin", "round");
+  icon.innerHTML = `<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line>`;
+  getKeyLinkEl.appendChild(document.createTextNode(" "));
+  getKeyLinkEl.appendChild(icon);
+}
+
+/**
+ * Toggle API key visibility
+ */
+function toggleApiKeyVisibility() {
+  const isPassword = aiApiKeyEl.type === "password";
+  aiApiKeyEl.type = isPassword ? "text" : "password";
+
+  // Update the eye icon
+  const eyeIcon = document.getElementById("eye-icon");
+  if (isPassword) {
+    // Show "eye-off" icon (key is visible)
+    eyeIcon.innerHTML = `
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+      <line x1="1" y1="1" x2="23" y2="23"></line>
+    `;
+  } else {
+    // Show "eye" icon (key is hidden)
+    eyeIcon.innerHTML = `
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+      <circle cx="12" cy="12" r="3"></circle>
+    `;
+  }
+}
+
+/**
+ * Toggle advanced settings panel
+ */
+function toggleAdvancedPanel() {
+  const isExpanded = advancedPanelEl.classList.toggle("show");
+  advancedToggleEl.classList.toggle("expanded", isExpanded);
+}
+
+/**
+ * Mask a single API key
+ */
+function maskApiKey(key) {
+  if (!key) return "";
+  if (key.length > 8) {
+    return key.slice(0, 4) + "****" + key.slice(-4);
+  } else if (key.length > 0) {
+    return "****";
+  }
+  return "";
+}
+
+/**
+ * Mask sensitive data in an object (for display purposes)
+ */
+function maskSensitiveData(data) {
+  const masked = JSON.parse(JSON.stringify(data));
+
+  // Mask API keys in ai_settings
+  if (masked.ai_settings) {
+    // Handle new per-provider keys format
+    if (masked.ai_settings.aiApiKeys) {
+      for (const provider of Object.keys(masked.ai_settings.aiApiKeys)) {
+        masked.ai_settings.aiApiKeys[provider] = maskApiKey(masked.ai_settings.aiApiKeys[provider]);
+      }
+    }
+    // Handle legacy single key format
+    if (masked.ai_settings.aiApiKey) {
+      masked.ai_settings.aiApiKey = maskApiKey(masked.ai_settings.aiApiKey);
+    }
+  }
+
+  return masked;
 }
 
 /**
@@ -258,7 +514,8 @@ async function handleClearLogs() {
  */
 async function handleViewRaw() {
   const data = await chrome.storage.local.get(null);
-  rawDataPreEl.textContent = JSON.stringify(data, null, 2);
+  const maskedData = maskSensitiveData(data);
+  rawDataPreEl.textContent = JSON.stringify(maskedData, null, 2);
   rawDataModalEl.classList.add("show");
 }
 
@@ -281,6 +538,18 @@ privacyModalEl.addEventListener("click", (e) => {
   if (e.target === privacyModalEl) hidePrivacyModal();
 });
 
+// Event listeners - AI Settings
+enableAiEl.addEventListener("change", () => {
+  updateAiPanelVisibility();
+  saveAiSettings();
+});
+aiProviderEl.addEventListener("change", handleProviderChange);
+aiModelEl.addEventListener("change", saveAiSettings);
+aiApiKeyEl.addEventListener("change", saveAiSettings);
+aiApiKeyEl.addEventListener("blur", saveAiSettings);
+apiKeyToggleEl.addEventListener("click", toggleApiKeyVisibility);
+advancedToggleEl.addEventListener("click", toggleAdvancedPanel);
+
 // Event listeners - Tabs
 tabBtns.forEach((btn) => {
   btn.addEventListener("click", () => switchTab(btn.dataset.tab));
@@ -296,4 +565,5 @@ rawDataModalEl.addEventListener("click", (e) => {
 
 // Load on popup open
 loadSettings();
+loadAiSettings();
 loadLastSync();

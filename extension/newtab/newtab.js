@@ -45,6 +45,44 @@
     namecheap: "../icons/engines/namecheap.png",
   };
 
+  // Contextual reasons for each theme - explains why a quote was recommended
+  const THEME_REASONS = {
+    programming: "you've been writing code",
+    debugging: "you've been troubleshooting code",
+    architecture: "you've been designing systems",
+    algorithms: "you've been working on algorithms",
+    learning: "you're exploring new concepts",
+    growth: "you're focused on self-improvement",
+    frustration: "you've been working through a challenge",
+    curiosity: "you're exploring something new",
+    excitement: "you've had a breakthrough",
+    anxiety: "you're navigating uncertainty",
+    career: "you're thinking about your career",
+    relationships: "you're thinking about relationships",
+    health: "you're focused on wellbeing",
+    finance: "you're thinking about finances",
+    persistence: "you're pushing through difficulty",
+    patience: "you're playing the long game",
+    simplicity: "you're simplifying things",
+    complexity: "you're tackling something complex",
+    wisdom: "you're seeking deeper understanding",
+    productivity: "you're optimizing your workflow",
+    motivation: "you're looking for inspiration",
+    writing: "you've been writing",
+    creativity: "you're brainstorming ideas",
+    "decision-making": "you're weighing options",
+    uncertainty: "you're navigating the unknown",
+    "problem-solving": "you're solving problems",
+    success: "you're chasing goals",
+    failure: "you're learning from setbacks",
+    time: "you're managing your time",
+    communication: "you're working on communication",
+    change: "you're navigating change",
+    philosophy: "you're reflecting on life",
+    courage: "you're facing something difficult",
+    fear: "you're confronting fears",
+  };
+
   const SEARCH_ENGINES = ["google", "duckduckgo", "perplexity"];
   const AI_PLATFORMS = ["chatgpt", "claude", "gemini"];
   const TOOLS = ["wolfram", "github", "namecheap"];
@@ -60,6 +98,7 @@
 
   const quoteEl = document.getElementById("quote");
   const authorEl = document.getElementById("author");
+  const reasonEl = document.getElementById("recommendation-reason");
   const containerEl = document.getElementById("container");
   const searchEl = document.getElementById("search");
   const refreshEl = document.getElementById("refresh");
@@ -98,6 +137,23 @@
   function displayQuote(quote) {
     quoteEl.textContent = quote.text;
     authorEl.textContent = quote.author;
+
+    // Display recommendation reason - prioritize AI reason over theme-based
+    if (quote.aiReason) {
+      // Use AI-generated contextual reason
+      reasonEl.textContent = quote.aiReason;
+      reasonEl.classList.add("show");
+    } else if (quote.matchedThemes && quote.matchedThemes.length > 0) {
+      // Fall back to theme-based reason
+      const primaryTheme = quote.matchedThemes[0];
+      const reason = THEME_REASONS[primaryTheme] || `you're exploring ${primaryTheme}`;
+      reasonEl.textContent = reason;
+      reasonEl.classList.add("show");
+    } else {
+      reasonEl.textContent = "";
+      reasonEl.classList.remove("show");
+    }
+
     hideLoading();
   }
 

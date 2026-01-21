@@ -11,6 +11,9 @@
     "alarms",
     "tabs"
   ],
+  "optional_permissions": [
+    "history"
+  ],
   "host_permissions": [
     "https://claude.ai/*",
     "https://chatgpt.com/*",

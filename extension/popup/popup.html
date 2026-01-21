@@ -564,6 +564,49 @@
       word-break: break-all;
       max-height: 300px;
     }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.05));
+    }
+
+    .pagination.hidden {
+      display: none;
+    }
+
+    .pagination-btn {
+      background: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.1));
+      border: none;
+      border-radius: 4px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+      cursor: pointer;
+      color: light-dark(#5f6368, #9aa0a6);
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .pagination-btn:hover:not(:disabled) {
+      background: light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.15));
+      color: light-dark(#202124, #e8eaed);
+    }
+
+    .pagination-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .pagination-info {
+      font-size: 0.7rem;
+      color: light-dark(#808080, #707070);
+      min-width: 3rem;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -634,6 +677,43 @@
           <input type="checkbox" id="enable-gemini" checked>
           <span class="toggle-slider"></span>
         </label>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Additional Data Sources</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Browser History</div>
+          <div class="setting-sublabel">Extract themes from visited pages</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="enable-browser-history">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Search Queries</div>
+          <div class="setting-sublabel">Extract themes from Google/Bing searches</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="enable-search-history">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="setting-row" id="history-days-row" style="display: none;">
+        <div class="setting-label">History Period</div>
+        <select id="history-days">
+          <option value="1">Last 24 hours</option>
+          <option value="3">Last 3 days</option>
+          <option value="7" selected>Last 7 days</option>
+          <option value="14">Last 14 days</option>
+          <option value="30">Last 30 days</option>
+        </select>
+      </div>
+      <div class="setting-sublabel" id="history-privacy-note" style="display: none; margin-top: 0.5rem; padding: 0.5rem; background: light-dark(rgba(74, 158, 255, 0.1), rgba(138, 180, 248, 0.1)); border-radius: 4px;">
+        Sensitive sites (banking, email, health) are automatically excluded. Processing happens locally.
       </div>
     </div>
 
@@ -713,6 +793,30 @@
       </div>
     </div>
 
+    <div class="section">
+      <div class="section-title">Notifications</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Update Notifications</div>
+          <div class="setting-sublabel">Show what's new after updates</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="enable-update-notifications" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Tips & Promotions</div>
+          <div class="setting-sublabel">Occasional feature highlights</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="enable-promotions" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
     <div class="section privacy-section">
       <div class="privacy-notice">
         <svg class="privacy-icon" viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
@@ -731,6 +835,11 @@
       <div class="section-title">Scrape History</div>
       <div class="logs-empty" id="logs-empty">No scrapes yet. Visit claude.ai or chatgpt.com to collect conversation data.</div>
       <div class="logs-list" id="logs-list"></div>
+      <div class="pagination hidden" id="logs-pagination">
+        <button class="pagination-btn" id="logs-prev">&larr;</button>
+        <span class="pagination-info" id="logs-page-info">1 / 1</span>
+        <button class="pagination-btn" id="logs-next">&rarr;</button>
+      </div>
     </div>
 
     <div class="section">

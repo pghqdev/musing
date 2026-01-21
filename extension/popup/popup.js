@@ -4,6 +4,7 @@
 
 const SETTINGS_KEY = "musing_settings";
 const AI_SETTINGS_KEY = "ai_settings";
+const NOTIFICATION_SETTINGS_KEY = "notification_settings";
 const LAST_SYNC_KEY = "last_sync_timestamp";
 const CONVERSATIONS_KEY = "recent_conversations";
 const QUOTES_KEY = "cached_quotes";
@@ -26,6 +27,27 @@ const AI_DEFAULTS = {
     openai: "",
   },
 };
+
+const NOTIFICATION_DEFAULTS = {
+  showUpdateNotifications: true,
+  showPromotions: true,
+};
+
+const HISTORY_SETTINGS_KEY = "history_settings";
+const HISTORY_DEFAULTS = {
+  enableBrowserHistory: false,
+  enableGoogleSearchHistory: false,
+  historyDaysBack: 7,
+  excludedDomains: [],
+};
+
+// Pagination constants
+const LOGS_PER_PAGE = 10;
+
+// Pagination state
+let currentLogsPage = 1;
+let totalLogsPages = 1;
+let allLogs = [];
 
 // Model options for each provider
 const PROVIDER_MODELS = {
@@ -69,6 +91,17 @@ const getKeyLinkEl = document.getElementById("get-key-link");
 const advancedToggleEl = document.getElementById("advanced-toggle");
 const advancedPanelEl = document.getElementById("advanced-panel");
 
+// Notification settings elements
+const enableUpdateNotificationsEl = document.getElementById("enable-update-notifications");
+const enablePromotionsEl = document.getElementById("enable-promotions");
+
+// History settings elements
+const enableBrowserHistoryEl = document.getElementById("enable-browser-history");
+const enableSearchHistoryEl = document.getElementById("enable-search-history");
+const historyDaysEl = document.getElementById("history-days");
+const historyDaysRowEl = document.getElementById("history-days-row");
+const historyPrivacyNoteEl = document.getElementById("history-privacy-note");
+
 // Provider-specific API key links
 const PROVIDER_KEY_URLS = {
   groq: "https://console.groq.com/keys",
@@ -85,6 +118,12 @@ const viewRawBtnEl = document.getElementById("view-raw-btn");
 const rawDataModalEl = document.getElementById("raw-data-modal");
 const rawDataCloseEl = document.getElementById("raw-data-close");
 const rawDataPreEl = document.getElementById("raw-data-pre");
+
+// Pagination elements
+const logsPaginationEl = document.getElementById("logs-pagination");
+const logsPrevBtnEl = document.getElementById("logs-prev");
+const logsNextBtnEl = document.getElementById("logs-next");
+const logsPageInfoEl = document.getElementById("logs-page-info");
 
 // Tab elements
 const tabBtns = document.querySelectorAll(".tab-btn");
@@ -289,6 +328,135 @@ function toggleAdvancedPanel() {
 }
 
 /**
+ * Load notification settings from storage
+ */
+async function loadNotificationSettings() {
+  const { [NOTIFICATION_SETTINGS_KEY]: settings = NOTIFICATION_DEFAULTS } =
+    await chrome.storage.local.get(NOTIFICATION_SETTINGS_KEY);
+
+  enableUpdateNotificationsEl.checked = settings.showUpdateNotifications ?? NOTIFICATION_DEFAULTS.showUpdateNotifications;
+  enablePromotionsEl.checked = settings.showPromotions ?? NOTIFICATION_DEFAULTS.showPromotions;
+}
+
+/**
+ * Save notification settings to storage
+ */
+async function saveNotificationSettings() {
+  const settings = {
+    showUpdateNotifications: enableUpdateNotificationsEl.checked,
+    showPromotions: enablePromotionsEl.checked,
+  };
+
+  await chrome.storage.local.set({ [NOTIFICATION_SETTINGS_KEY]: settings });
+  showStatus("Saved", "success");
+}
+
+/**
+ * Load history settings from storage
+ */
+async function loadHistorySettings() {
+  const { [HISTORY_SETTINGS_KEY]: settings = HISTORY_DEFAULTS } =
+    await chrome.storage.local.get(HISTORY_SETTINGS_KEY);
+
+  enableBrowserHistoryEl.checked = settings.enableBrowserHistory ?? HISTORY_DEFAULTS.enableBrowserHistory;
+  enableSearchHistoryEl.checked = settings.enableGoogleSearchHistory ?? HISTORY_DEFAULTS.enableGoogleSearchHistory;
+  historyDaysEl.value = settings.historyDaysBack ?? HISTORY_DEFAULTS.historyDaysBack;
+
+  updateHistoryUIVisibility();
+}
+
+/**
+ * Save history settings to storage
+ */
+async function saveHistorySettings() {
+  const settings = {
+    enableBrowserHistory: enableBrowserHistoryEl.checked,
+    enableGoogleSearchHistory: enableSearchHistoryEl.checked,
+    historyDaysBack: parseInt(historyDaysEl.value, 10),
+    excludedDomains: HISTORY_DEFAULTS.excludedDomains,
+  };
+
+  await chrome.storage.local.set({ [HISTORY_SETTINGS_KEY]: settings });
+  showStatus("Saved", "success");
+
+  // Trigger history processing if any history source is enabled
+  if (settings.enableBrowserHistory || settings.enableGoogleSearchHistory) {
+    triggerHistoryProcessing();
+  }
+}
+
+/**
+ * Update history UI visibility based on settings
+ */
+function updateHistoryUIVisibility() {
+  const anyHistoryEnabled = enableBrowserHistoryEl.checked || enableSearchHistoryEl.checked;
+  historyDaysRowEl.style.display = anyHistoryEnabled ? "flex" : "none";
+  historyPrivacyNoteEl.style.display = anyHistoryEnabled ? "block" : "none";
+}
+
+/**
+ * Check if history permission is granted
+ */
+async function checkHistoryPermission() {
+  try {
+    return await chrome.permissions.contains({ permissions: ["history"] });
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Request history permission
+ */
+async function requestHistoryPermission() {
+  try {
+    const granted = await chrome.permissions.request({ permissions: ["history"] });
+    return granted;
+  } catch (error) {
+    console.error("Failed to request history permission:", error);
+    return false;
+  }
+}
+
+/**
+ * Handle history toggle change
+ * Requests permission if needed
+ */
+async function handleHistoryToggle(toggle, settingKey) {
+  if (toggle.checked) {
+    // Check if permission is already granted
+    const hasPermission = await checkHistoryPermission();
+
+    if (!hasPermission) {
+      // Request permission
+      const granted = await requestHistoryPermission();
+
+      if (!granted) {
+        // Permission denied, revert toggle
+        toggle.checked = false;
+        showStatus("Permission required", "error");
+        return;
+      }
+    }
+  }
+
+  updateHistoryUIVisibility();
+  await saveHistorySettings();
+}
+
+/**
+ * Trigger history processing in background
+ */
+async function triggerHistoryProcessing() {
+  try {
+    await chrome.runtime.sendMessage({ type: "PROCESS_HISTORY" });
+    console.log("[Musing] History processing triggered");
+  } catch (error) {
+    console.warn("Failed to trigger history processing:", error);
+  }
+}
+
+/**
  * Mask a single API key
  */
 function maskApiKey(key) {
@@ -442,24 +610,41 @@ async function loadLogs() {
   quotesCountEl.textContent = `${quotes.length} quotes cached`;
 
   // If no scrape logs but we have conversations, show them instead
-  const displayData = logs.length > 0 ? logs : conversations.map((text, i) => ({
+  allLogs = logs.length > 0 ? logs : conversations.map((text, i) => ({
     source: "unknown",
     timestamp: Date.now() - (i * 60000),
     preview: text.slice(0, 100),
     length: text.length,
   }));
 
-  if (displayData.length === 0) {
+  if (allLogs.length === 0) {
     logsEmptyEl.style.display = "block";
-    logsListEl.innerHTML = "";
+    logsListEl.replaceChildren();
+    logsPaginationEl.classList.add("hidden");
     return;
   }
 
   logsEmptyEl.style.display = "none";
 
+  // Calculate pagination
+  totalLogsPages = Math.ceil(allLogs.length / LOGS_PER_PAGE);
+  currentLogsPage = Math.min(currentLogsPage, totalLogsPages);
+
+  renderLogsPage();
+  updatePaginationUI();
+}
+
+/**
+ * Render the current page of logs
+ */
+function renderLogsPage() {
+  const startIndex = (currentLogsPage - 1) * LOGS_PER_PAGE;
+  const endIndex = Math.min(startIndex + LOGS_PER_PAGE, allLogs.length);
+  const pageData = allLogs.slice(startIndex, endIndex);
+
   // Use DOM APIs instead of innerHTML to prevent XSS
   logsListEl.replaceChildren();
-  displayData.forEach((log) => {
+  pageData.forEach((log) => {
     const time = new Date(log.timestamp).toLocaleString();
     const sourceName = log.source === "claude" ? "Claude.ai" :
                        log.source === "chatgpt" ? "ChatGPT" :
@@ -488,6 +673,43 @@ async function loadLogs() {
 }
 
 /**
+ * Update pagination UI state
+ */
+function updatePaginationUI() {
+  // Show/hide pagination based on total pages
+  if (totalLogsPages <= 1) {
+    logsPaginationEl.classList.add("hidden");
+  } else {
+    logsPaginationEl.classList.remove("hidden");
+    logsPageInfoEl.textContent = `${currentLogsPage} / ${totalLogsPages}`;
+    logsPrevBtnEl.disabled = currentLogsPage <= 1;
+    logsNextBtnEl.disabled = currentLogsPage >= totalLogsPages;
+  }
+}
+
+/**
+ * Go to previous logs page
+ */
+function goToPrevPage() {
+  if (currentLogsPage > 1) {
+    currentLogsPage--;
+    renderLogsPage();
+    updatePaginationUI();
+  }
+}
+
+/**
+ * Go to next logs page
+ */
+function goToNextPage() {
+  if (currentLogsPage < totalLogsPages) {
+    currentLogsPage++;
+    renderLogsPage();
+    updatePaginationUI();
+  }
+}
+
+/**
  * Escape HTML entities
  */
 function escapeHtml(text) {
@@ -506,6 +728,12 @@ async function handleClearLogs() {
 
   await chrome.storage.local.remove([SCRAPE_LOG_KEY, CONVERSATIONS_KEY, QUOTES_KEY]);
   showStatus("Data cleared", "success");
+
+  // Reset pagination state
+  currentLogsPage = 1;
+  totalLogsPages = 1;
+  allLogs = [];
+
   loadLogs();
 }
 
@@ -550,6 +778,15 @@ aiApiKeyEl.addEventListener("blur", saveAiSettings);
 apiKeyToggleEl.addEventListener("click", toggleApiKeyVisibility);
 advancedToggleEl.addEventListener("click", toggleAdvancedPanel);
 
+// Event listeners - Notification Settings
+enableUpdateNotificationsEl.addEventListener("change", saveNotificationSettings);
+enablePromotionsEl.addEventListener("change", saveNotificationSettings);
+
+// Event listeners - History Settings
+enableBrowserHistoryEl.addEventListener("change", () => handleHistoryToggle(enableBrowserHistoryEl, "enableBrowserHistory"));
+enableSearchHistoryEl.addEventListener("change", () => handleHistoryToggle(enableSearchHistoryEl, "enableGoogleSearchHistory"));
+historyDaysEl.addEventListener("change", saveHistorySettings);
+
 // Event listeners - Tabs
 tabBtns.forEach((btn) => {
   btn.addEventListener("click", () => switchTab(btn.dataset.tab));
@@ -563,7 +800,13 @@ rawDataModalEl.addEventListener("click", (e) => {
   if (e.target === rawDataModalEl) hideRawDataModal();
 });
 
+// Event listeners - Pagination
+logsPrevBtnEl.addEventListener("click", goToPrevPage);
+logsNextBtnEl.addEventListener("click", goToNextPage);
+
 // Load on popup open
 loadSettings();
 loadAiSettings();
+loadNotificationSettings();
+loadHistorySettings();
 loadLastSync();

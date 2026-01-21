@@ -583,6 +583,186 @@
       color: light-dark(#9aa0a6, #5f6368);
       margin: 0.5rem 0 0.5rem 0.6rem;
     }
+
+    /* Notification banner */
+    .notification-banner {
+      position: fixed;
+      top: 1rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: light-dark(#fff, #2d2d30);
+      border: 1px solid light-dark(#dfe1e5, #3c4043);
+      border-radius: 12px;
+      box-shadow: light-dark(0 4px 12px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.4));
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 0.875rem;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
+      max-width: 90%;
+    }
+
+    .notification-banner.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .notification-icon {
+      font-size: 1.25rem;
+    }
+
+    .notification-content {
+      flex: 1;
+    }
+
+    .notification-title {
+      font-weight: 600;
+      color: light-dark(#202124, #e8eaed);
+    }
+
+    .notification-subtitle {
+      font-size: 0.75rem;
+      color: light-dark(#5f6368, #9aa0a6);
+      margin-top: 0.125rem;
+    }
+
+    .notification-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .notification-btn {
+      padding: 0.375rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s;
+      border: none;
+    }
+
+    .notification-btn-primary {
+      background: #4a9eff;
+      color: #fff;
+    }
+
+    .notification-btn-primary:hover {
+      background: #3a8eef;
+    }
+
+    .notification-btn-dismiss {
+      background: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.1));
+      color: light-dark(#5f6368, #9aa0a6);
+    }
+
+    .notification-btn-dismiss:hover {
+      background: light-dark(rgba(0, 0, 0, 0.1), rgba(255, 255, 255, 0.15));
+    }
+
+    /* What's New modal (reuses onboarding styles) */
+    .whats-new-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 2147483647;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .whats-new-overlay.show {
+      display: flex;
+    }
+
+    .whats-new-card {
+      background: light-dark(#fff, #2d2d30);
+      border-radius: 16px;
+      padding: 2rem;
+      width: 420px;
+      max-width: 90%;
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 0.3s ease-out;
+    }
+
+    .whats-new-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+
+    .whats-new-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: light-dark(#202124, #e8eaed);
+    }
+
+    .whats-new-version {
+      font-size: 0.875rem;
+      color: light-dark(#5f6368, #9aa0a6);
+      margin-bottom: 1.5rem;
+    }
+
+    .whats-new-list {
+      text-align: left;
+      margin-bottom: 1.5rem;
+    }
+
+    .whats-new-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem;
+      background: light-dark(#f8f9fa, #3c3c3c);
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+
+    .whats-new-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .whats-new-item-icon {
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+
+    .whats-new-item-text {
+      font-size: 0.875rem;
+      color: light-dark(#202124, #e8eaed);
+      line-height: 1.4;
+    }
+
+    .whats-new-buttons {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    .whats-new-btn {
+      padding: 0.75rem 1.5rem;
+      border-radius: 24px;
+      font-size: 0.9375rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+      background: #4a9eff;
+      color: #fff;
+    }
+
+    .whats-new-btn:hover {
+      background: #3a8eef;
+    }
   </style>
 </head>
 <body>
@@ -616,6 +796,19 @@
       <div class="engine-dropdown" id="engine-dropdown">
         <!-- Engine options rendered by JS -->
       </div>
+    </div>
+  </div>
+
+  <!-- Notification banner -->
+  <div class="notification-banner" id="notification-banner">
+    <span class="notification-icon" id="notification-icon"></span>
+    <div class="notification-content">
+      <div class="notification-title" id="notification-title"></div>
+      <div class="notification-subtitle" id="notification-subtitle"></div>
+    </div>
+    <div class="notification-actions">
+      <button class="notification-btn notification-btn-primary" id="notification-view">View</button>
+      <button class="notification-btn notification-btn-dismiss" id="notification-dismiss">Dismiss</button>
     </div>
   </div>
 
@@ -710,6 +903,21 @@
           <div class="onboarding-dot"></div>
           <div class="onboarding-dot active"></div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- What's New modal -->
+  <div class="whats-new-overlay" id="whats-new">
+    <div class="whats-new-card">
+      <div class="whats-new-icon" id="whats-new-icon"></div>
+      <h2 class="whats-new-title" id="whats-new-title">What's New</h2>
+      <p class="whats-new-version" id="whats-new-version"></p>
+      <div class="whats-new-list" id="whats-new-list">
+        <!-- Items rendered by JS -->
+      </div>
+      <div class="whats-new-buttons">
+        <button class="whats-new-btn" id="whats-new-close">Got it</button>
       </div>
     </div>
   </div>

@@ -7,7 +7,7 @@
  */
 
 // Import local modules
-importScripts("lib/theme-extractor.js", "lib/quotes-db.js", "lib/ai-reason-generator.js");
+importScripts("lib/theme-extractor.js", "lib/quotes-db.js", "lib/ai-reason-generator.js", "lib/history-extractor.js");
 
 const MIN_CACHE_SIZE = 5;
 const DEFAULT_CACHE_SIZE = 15;
@@ -24,6 +24,14 @@ const KEYS = {
   LAST_SCRAPE: "last_scrape_timestamps",
   API_CAPTURES: "api_captures",
   AI_SETTINGS: "ai_settings",
+  // Notification keys
+  LAST_SEEN_VERSION: "last_seen_version",
+  PENDING_UPDATE_NOTIFICATION: "pending_update",
+  NOTIFICATIONS_DISMISSED: "notifications_dismissed",
+  NOTIFICATION_SETTINGS: "notification_settings",
+  // History keys
+  HISTORY_SETTINGS: "history_settings",
+  HISTORY_THEMES: "history_themes",
 };
 
 // Proactive scraping configuration
@@ -42,25 +50,56 @@ const backgroundScrapeTabs = new Map();
 // No fallback needed - local database always available
 
 // Initialize on install
-chrome.runtime.onInstalled.addListener(async () => {
-  console.log("[Musing] Extension installed - fully local mode");
+chrome.runtime.onInstalled.addListener(async (details) => {
+  const currentVersion = chrome.runtime.getManifest().version;
+  console.log("[Musing] Extension event:", details.reason, "version:", currentVersion);
 
-  // Set up proactive scraping check alarm (every 6 hours)
-  chrome.alarms.create("check-stale-scrapes", {
-    periodInMinutes: 6 * 60,
-  });
+  if (details.reason === "install") {
+    console.log("[Musing] Fresh install - fully local mode");
 
-  // Initialize scrape timestamps
-  await chrome.storage.local.set({
-    [KEYS.LAST_SCRAPE]: {
-      claude: 0,
-      chatgpt: 0,
-      gemini: 0,
-    },
-  });
+    // Set up proactive scraping check alarm (every 6 hours)
+    chrome.alarms.create("check-stale-scrapes", {
+      periodInMinutes: 6 * 60,
+    });
 
-  // Initialize with quotes from local database
-  await refreshLocalQuoteCache();
+    // Initialize scrape timestamps
+    await chrome.storage.local.set({
+      [KEYS.LAST_SCRAPE]: {
+        claude: 0,
+        chatgpt: 0,
+        gemini: 0,
+      },
+    });
+
+    // Initialize with quotes from local database
+    await refreshLocalQuoteCache();
+
+    // Store initial version
+    await chrome.storage.local.set({ [KEYS.LAST_SEEN_VERSION]: currentVersion });
+
+  } else if (details.reason === "update") {
+    const previousVersion = details.previousVersion;
+    console.log("[Musing] Extension updated from", previousVersion, "to", currentVersion);
+
+    // Check notification settings
+    const { [KEYS.NOTIFICATION_SETTINGS]: settings = { showUpdateNotifications: true } } =
+      await chrome.storage.local.get(KEYS.NOTIFICATION_SETTINGS);
+
+    if (settings.showUpdateNotifications && previousVersion !== currentVersion) {
+      // Store pending update notification
+      await chrome.storage.local.set({
+        [KEYS.PENDING_UPDATE_NOTIFICATION]: {
+          previousVersion,
+          currentVersion,
+          timestamp: Date.now(),
+        },
+      });
+      console.log("[Musing] Stored pending update notification");
+    }
+
+    // Update stored version
+    await chrome.storage.local.set({ [KEYS.LAST_SEEN_VERSION]: currentVersion });
+  }
 });
 
 // Check for stale scrapes on startup
@@ -126,7 +165,150 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     handleForceSync().then(sendResponse);
     return true;
   }
+
+  if (message.type === "GET_PENDING_NOTIFICATIONS") {
+    getPendingNotifications().then(sendResponse);
+    return true;
+  }
+
+  if (message.type === "DISMISS_NOTIFICATION") {
+    dismissNotification(message.notificationId).then(sendResponse);
+    return true;
+  }
+
+  if (message.type === "PROCESS_HISTORY") {
+    processHistoryThemes().then(sendResponse);
+    return true;
+  }
+
+  if (message.type === "CHECK_HISTORY_PERMISSION") {
+    chrome.permissions.contains({ permissions: ["history"] }).then(sendResponse);
+    return true;
+  }
+
+  if (message.type === "REQUEST_HISTORY_PERMISSION") {
+    chrome.permissions.request({ permissions: ["history"] }).then(sendResponse);
+    return true;
+  }
 });
+
+/**
+ * Get pending notifications for the new tab page
+ */
+async function getPendingNotifications() {
+  const {
+    [KEYS.PENDING_UPDATE_NOTIFICATION]: pendingUpdate,
+    [KEYS.NOTIFICATIONS_DISMISSED]: dismissed = [],
+    [KEYS.NOTIFICATION_SETTINGS]: settings = { showUpdateNotifications: true, showPromotions: true },
+  } = await chrome.storage.local.get([
+    KEYS.PENDING_UPDATE_NOTIFICATION,
+    KEYS.NOTIFICATIONS_DISMISSED,
+    KEYS.NOTIFICATION_SETTINGS,
+  ]);
+
+  const notifications = [];
+
+  // Check for update notification
+  if (pendingUpdate && settings.showUpdateNotifications) {
+    const notificationId = `update-${pendingUpdate.currentVersion}`;
+    if (!dismissed.includes(notificationId)) {
+      notifications.push({
+        id: notificationId,
+        type: "update",
+        title: `Updated to v${pendingUpdate.currentVersion}`,
+        previousVersion: pendingUpdate.previousVersion,
+        currentVersion: pendingUpdate.currentVersion,
+        timestamp: pendingUpdate.timestamp,
+      });
+    }
+  }
+
+  return { notifications };
+}
+
+/**
+ * Dismiss a notification
+ */
+async function dismissNotification(notificationId) {
+  const { [KEYS.NOTIFICATIONS_DISMISSED]: dismissed = [] } =
+    await chrome.storage.local.get(KEYS.NOTIFICATIONS_DISMISSED);
+
+  if (!dismissed.includes(notificationId)) {
+    dismissed.push(notificationId);
+    // Keep only last 20 dismissed notifications
+    const trimmed = dismissed.slice(-20);
+    await chrome.storage.local.set({ [KEYS.NOTIFICATIONS_DISMISSED]: trimmed });
+  }
+
+  // If this was an update notification, also clear the pending update
+  if (notificationId.startsWith("update-")) {
+    await chrome.storage.local.remove(KEYS.PENDING_UPDATE_NOTIFICATION);
+  }
+
+  console.log("[Musing] Notification dismissed:", notificationId);
+  return { success: true };
+}
+
+/**
+ * Process browser history to extract themes
+ * Uses the history-extractor module
+ */
+async function processHistoryThemes() {
+  try {
+    // Get history settings
+    const { [KEYS.HISTORY_SETTINGS]: settings = {} } =
+      await chrome.storage.local.get(KEYS.HISTORY_SETTINGS);
+
+    if (!settings.enableBrowserHistory && !settings.enableGoogleSearchHistory) {
+      console.log("[Musing] History processing skipped - not enabled");
+      return { success: true, skipped: true };
+    }
+
+    // Extract themes from history using the history-extractor module
+    const result = await extractHistoryThemes(settings);
+
+    if (result.themes && result.themes.length > 0) {
+      // Store extracted history themes
+      await chrome.storage.local.set({
+        [KEYS.HISTORY_THEMES]: {
+          themes: result.themes,
+          extractedAt: Date.now(),
+          sourceCount: result.sourceCount,
+          searchQueryCount: result.searchQueryCount || 0,
+          titleCount: result.titleCount || 0,
+        },
+      });
+
+      console.log("[Musing] History themes extracted:", result.themes.length, "themes from", result.sourceCount, "sources");
+
+      // Refresh quote cache with combined themes
+      await refreshQuoteCacheWithHistoryThemes();
+    }
+
+    return { success: true, themes: result.themes, sourceCount: result.sourceCount };
+  } catch (error) {
+    console.error("[Musing] History processing failed:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Refresh quote cache combining conversation themes and history themes
+ */
+async function refreshQuoteCacheWithHistoryThemes() {
+  const {
+    [KEYS.EXTRACTED_THEMES]: conversationThemes = [],
+    [KEYS.HISTORY_THEMES]: historyData = {},
+  } = await chrome.storage.local.get([KEYS.EXTRACTED_THEMES, KEYS.HISTORY_THEMES]);
+
+  const historyThemes = historyData.themes || [];
+
+  // Combine themes, prioritizing conversation themes
+  const combinedThemes = [...new Set([...conversationThemes, ...historyThemes])];
+
+  // Refresh quote cache with combined themes
+  await refreshLocalQuoteCache(combinedThemes);
+}
 
 /**
  * Handle manual sync from popup
@@ -392,13 +574,19 @@ async function getQuoteForDisplay() {
     [KEYS.EXTRACTED_THEMES]: themes = [],
     [KEYS.CONVERSATIONS]: conversations = [],
     [KEYS.AI_SETTINGS]: aiSettings = {},
+    [KEYS.HISTORY_THEMES]: historyData = {},
   } = await chrome.storage.local.get([
     KEYS.QUOTES,
     KEYS.SHOWN_QUOTE_IDS,
     KEYS.EXTRACTED_THEMES,
     KEYS.CONVERSATIONS,
     KEYS.AI_SETTINGS,
+    KEYS.HISTORY_THEMES,
   ]);
+
+  // Combine conversation themes with history themes
+  const historyThemes = historyData.themes || [];
+  const combinedThemes = [...new Set([...themes, ...historyThemes])];
 
   // Ensure quotes are loaded from JSON
   await ensureQuotesLoaded();
@@ -406,9 +594,9 @@ async function getQuoteForDisplay() {
   // Use cached quotes if available, otherwise get from local database
   let availableQuotes = quotes.length > 0 ? quotes : QUOTES_DB;
 
-  // If cache is low, refresh from local database with current themes
+  // If cache is low, refresh from local database with combined themes
   if (quotes.length < MIN_CACHE_SIZE) {
-    availableQuotes = await findQuotesByThemes(themes, DEFAULT_CACHE_SIZE);
+    availableQuotes = await findQuotesByThemes(combinedThemes, DEFAULT_CACHE_SIZE);
   }
 
   // Filter out recently shown quotes
@@ -417,7 +605,7 @@ async function getQuoteForDisplay() {
 
   // If all have been shown, reset and get fresh quotes
   if (available.length === 0) {
-    available = await findQuotesByThemes(themes, DEFAULT_CACHE_SIZE);
+    available = await findQuotesByThemes(combinedThemes, DEFAULT_CACHE_SIZE);
     await chrome.storage.local.set({ [KEYS.SHOWN_QUOTE_IDS]: [] });
   }
 
@@ -428,8 +616,8 @@ async function getQuoteForDisplay() {
   const updatedShown = [quote.id, ...shownIds].slice(0, 20);
   await chrome.storage.local.set({ [KEYS.SHOWN_QUOTE_IDS]: updatedShown });
 
-  // Find matched themes between user's extracted themes and quote's themes
-  const userThemes = new Set(themes.map((t) => t.toLowerCase()));
+  // Find matched themes between user's combined themes and quote's themes
+  const userThemes = new Set(combinedThemes.map((t) => t.toLowerCase()));
   const matchedThemes = (quote.themes || []).filter((t) => userThemes.has(t.toLowerCase()));
 
   // Try to generate AI reason if enabled

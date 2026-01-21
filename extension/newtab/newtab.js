@@ -87,6 +87,21 @@
   const AI_PLATFORMS = ["chatgpt", "claude", "gemini"];
   const TOOLS = ["wolfram", "github", "namecheap"];
 
+  // Version changelog - keyed by version number
+  // Add entries when releasing new versions
+  const VERSION_CHANGELOG = {
+    "1.1.0": {
+      icon: "✨",
+      title: "What's New in v1.1.0",
+      items: [
+        { icon: "📜", text: "Browse through logs with new pagination controls" },
+        { icon: "🔔", text: "Update notifications to keep you informed of new features" },
+        { icon: "📚", text: "Browser history as an optional data source for more personalized quotes" },
+      ],
+    },
+    // Add more versions as needed
+  };
+
   // Local fallback quotes (used when service worker is unavailable)
   const LOCAL_FALLBACKS = [
     { text: "The journey of a thousand miles begins with a single step.", author: "Lao Tzu" },
@@ -107,9 +122,26 @@
   const engineIconEl = document.getElementById("engine-icon");
   const engineDropdownEl = document.getElementById("engine-dropdown");
 
+  // Notification elements
+  const notificationBannerEl = document.getElementById("notification-banner");
+  const notificationIconEl = document.getElementById("notification-icon");
+  const notificationTitleEl = document.getElementById("notification-title");
+  const notificationSubtitleEl = document.getElementById("notification-subtitle");
+  const notificationViewBtnEl = document.getElementById("notification-view");
+  const notificationDismissBtnEl = document.getElementById("notification-dismiss");
+
+  // What's New modal elements
+  const whatsNewEl = document.getElementById("whats-new");
+  const whatsNewIconEl = document.getElementById("whats-new-icon");
+  const whatsNewTitleEl = document.getElementById("whats-new-title");
+  const whatsNewVersionEl = document.getElementById("whats-new-version");
+  const whatsNewListEl = document.getElementById("whats-new-list");
+  const whatsNewCloseBtnEl = document.getElementById("whats-new-close");
+
   let searchEngine = "google";
   let isInitialized = false;
   let dropdownOpen = false;
+  let currentNotification = null;
 
   /**
    * Show loading state
@@ -453,6 +485,7 @@
     setupStorageListener();
     setupOnboarding();
     checkOnboarding();
+    checkNotifications();
   }
 
   // Event listeners
@@ -473,6 +506,172 @@
     if (e.key === "Escape" && dropdownOpen) {
       closeDropdown();
       searchEl.focus();
+    }
+  });
+
+  // ============ Notifications ============
+
+  /**
+   * Check for pending notifications
+   */
+  async function checkNotifications() {
+    if (!isExtensionContextValid()) return;
+
+    try {
+      const response = await chrome.runtime.sendMessage({ type: "GET_PENDING_NOTIFICATIONS" });
+      const notifications = response?.notifications || [];
+
+      if (notifications.length > 0) {
+        // Show the first notification
+        const notification = notifications[0];
+        currentNotification = notification;
+
+        if (notification.type === "update") {
+          showUpdateNotificationBanner(notification);
+        }
+      }
+    } catch (error) {
+      console.warn("[Musing] Could not check notifications:", error);
+    }
+  }
+
+  /**
+   * Show update notification banner
+   */
+  function showUpdateNotificationBanner(notification) {
+    notificationIconEl.textContent = "🎉";
+    notificationTitleEl.textContent = notification.title;
+    notificationSubtitleEl.textContent = "Click to see what's new";
+
+    // Show banner with slight delay for smooth animation
+    setTimeout(() => {
+      notificationBannerEl.classList.add("show");
+    }, 500);
+  }
+
+  /**
+   * Hide notification banner
+   */
+  function hideNotificationBanner() {
+    notificationBannerEl.classList.remove("show");
+  }
+
+  /**
+   * Show What's New modal for a version
+   */
+  function showWhatsNewModal(version) {
+    const changelog = VERSION_CHANGELOG[version];
+
+    if (changelog) {
+      whatsNewIconEl.textContent = changelog.icon;
+      whatsNewTitleEl.textContent = changelog.title;
+      whatsNewVersionEl.textContent = `Version ${version}`;
+
+      // Render changelog items
+      whatsNewListEl.replaceChildren();
+      changelog.items.forEach((item) => {
+        const itemEl = document.createElement("div");
+        itemEl.className = "whats-new-item";
+
+        const iconEl = document.createElement("span");
+        iconEl.className = "whats-new-item-icon";
+        iconEl.textContent = item.icon;
+        itemEl.appendChild(iconEl);
+
+        const textEl = document.createElement("span");
+        textEl.className = "whats-new-item-text";
+        textEl.textContent = item.text;
+        itemEl.appendChild(textEl);
+
+        whatsNewListEl.appendChild(itemEl);
+      });
+    } else {
+      // Generic update message if no specific changelog
+      whatsNewIconEl.textContent = "✨";
+      whatsNewTitleEl.textContent = "musing has been updated";
+      whatsNewVersionEl.textContent = `Version ${version}`;
+
+      whatsNewListEl.replaceChildren();
+      const itemEl = document.createElement("div");
+      itemEl.className = "whats-new-item";
+      const iconEl = document.createElement("span");
+      iconEl.className = "whats-new-item-icon";
+      iconEl.textContent = "🚀";
+      itemEl.appendChild(iconEl);
+      const textEl = document.createElement("span");
+      textEl.className = "whats-new-item-text";
+      textEl.textContent = "Bug fixes and performance improvements";
+      itemEl.appendChild(textEl);
+      whatsNewListEl.appendChild(itemEl);
+    }
+
+    whatsNewEl.classList.add("show");
+  }
+
+  /**
+   * Hide What's New modal
+   */
+  function hideWhatsNewModal() {
+    whatsNewEl.classList.remove("show");
+  }
+
+  /**
+   * Dismiss the current notification
+   */
+  async function dismissCurrentNotification() {
+    if (!currentNotification || !isExtensionContextValid()) return;
+
+    try {
+      await chrome.runtime.sendMessage({
+        type: "DISMISS_NOTIFICATION",
+        notificationId: currentNotification.id,
+      });
+    } catch (error) {
+      console.warn("[Musing] Could not dismiss notification:", error);
+    }
+
+    currentNotification = null;
+    hideNotificationBanner();
+  }
+
+  /**
+   * Handle notification view click
+   */
+  function handleNotificationView() {
+    if (!currentNotification) return;
+
+    hideNotificationBanner();
+
+    if (currentNotification.type === "update") {
+      showWhatsNewModal(currentNotification.currentVersion);
+    }
+  }
+
+  /**
+   * Handle What's New close
+   */
+  function handleWhatsNewClose() {
+    hideWhatsNewModal();
+    dismissCurrentNotification();
+    searchEl.focus();
+  }
+
+  // Notification event listeners
+  notificationViewBtnEl.addEventListener("click", handleNotificationView);
+  notificationDismissBtnEl.addEventListener("click", dismissCurrentNotification);
+  whatsNewCloseBtnEl.addEventListener("click", handleWhatsNewClose);
+
+  // Close What's New on escape
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && whatsNewEl.classList.contains("show")) {
+      handleWhatsNewClose();
+    }
+  });
+
+  // Close What's New on overlay click
+  whatsNewEl.addEventListener("click", (e) => {
+    if (e.target === whatsNewEl) {
+      handleWhatsNewClose();
     }
   });
 

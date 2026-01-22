@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "musing",
   "short_name": "musing",
-  "version": "1.0.0",
-  "description": "Personalized quotes on every new tab, matched to your AI conversations. Fully private - all processing happens locally.",
+  "version": "1.1.0",
+  "description": "Personalized quotes on every new tab, learned locally from your AI conversations. Optional BYOK smart reasons.",
   "homepage_url": "https://musing.wiki",
   "minimum_chrome_version": "110",
   "permissions": [

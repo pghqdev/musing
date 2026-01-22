@@ -9,6 +9,10 @@
   const SETTINGS_KEY = "musing_settings";
   const ONBOARDING_KEY = "onboarding_complete";
   const QUOTES_KEY = "cached_quotes";
+  const FAVORITES_KEY = "favorite_quotes";
+  const SHOWN_QUOTES_HISTORY_KEY = "shown_quotes_history";
+  const BLOCKED_THEMES_KEY = "blocked_themes";
+  const DAILY_QUOTE_KEY = "daily_quote_state";
   const SEARCH_URLS = {
     google: "https://www.google.com/search?q=",
     duckduckgo: "https://duckduckgo.com/?q=",
@@ -94,9 +98,11 @@
       icon: "✨",
       title: "What's New in v1.1.0",
       items: [
-        { icon: "📜", text: "Browse through logs with new pagination controls" },
-        { icon: "🔔", text: "Update notifications to keep you informed of new features" },
-        { icon: "📚", text: "Browser history as an optional data source for more personalized quotes" },
+        { icon: "⭐", text: "Save favorite quotes and export them anytime" },
+        { icon: "�️", text: "Daily quote mode for a calmer new tab" },
+        { icon: "🏷️", text: "Theme chips with “less like this” controls" },
+        { icon: "�", text: "Quote history plus one-click copy" },
+        { icon: "🔕", text: "New proactive refresh toggle to avoid surprise tabs" },
       ],
     },
     // Add more versions as needed
@@ -121,6 +127,15 @@
   const engineSelectorEl = document.getElementById("engine-selector");
   const engineIconEl = document.getElementById("engine-icon");
   const engineDropdownEl = document.getElementById("engine-dropdown");
+  const toastEl = document.getElementById("toast");
+  const copyQuoteEl = document.getElementById("copy-quote");
+  const favoriteQuoteEl = document.getElementById("favorite-quote");
+  const favoriteQuoteLabelEl = document.getElementById("favorite-quote-label");
+  const openHistoryEl = document.getElementById("open-history");
+  const historyEl = document.getElementById("history");
+  const historyListEl = document.getElementById("history-list");
+  const historyCloseEl = document.getElementById("history-close");
+  const themeChipsEl = document.getElementById("theme-chips");
 
   // Notification elements
   const notificationBannerEl = document.getElementById("notification-banner");
@@ -142,6 +157,10 @@
   let isInitialized = false;
   let dropdownOpen = false;
   let currentNotification = null;
+  let currentQuote = null;
+  let toastTimeout = null;
+  let dailyQuoteEnabled = false;
+  let showThemeChips = true;
 
   /**
    * Show loading state
@@ -167,6 +186,11 @@
    * Display a quote
    */
   function displayQuote(quote) {
+    if (!quote || !quote.text) {
+      quote = getRandomFallback();
+    }
+
+    currentQuote = quote;
     quoteEl.textContent = quote.text;
     authorEl.textContent = quote.author;
 
@@ -187,6 +211,253 @@
     }
 
     hideLoading();
+    renderThemeChips(quote);
+    updateFavoriteButtonState();
+    addToShownQuoteHistory(quote);
+  }
+
+  function showToast(message) {
+    if (!toastEl) return;
+    if (toastTimeout) {
+      clearTimeout(toastTimeout);
+      toastTimeout = null;
+    }
+    toastEl.textContent = message;
+    toastEl.classList.add("show");
+    toastTimeout = setTimeout(() => {
+      toastEl.classList.remove("show");
+    }, 1600);
+  }
+
+  async function copyCurrentQuote() {
+    if (!currentQuote || !currentQuote.text) return;
+    const text = `"${currentQuote.text}" — ${currentQuote.author || ""}`.trim();
+    try {
+      await navigator.clipboard.writeText(text);
+      showToast("Copied");
+    } catch {
+      try {
+        const el = document.createElement("textarea");
+        el.value = text;
+        el.setAttribute("readonly", "true");
+        el.style.position = "fixed";
+        el.style.left = "-9999px";
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand("copy");
+        el.remove();
+        showToast("Copied");
+      } catch {
+        showToast("Copy failed");
+      }
+    }
+  }
+
+  async function loadFavorites() {
+    const { [FAVORITES_KEY]: favorites = [] } = await chrome.storage.local.get(FAVORITES_KEY);
+    return Array.isArray(favorites) ? favorites : [];
+  }
+
+  async function updateFavoriteButtonState() {
+    if (!favoriteQuoteEl || !currentQuote?.id) return;
+    const favorites = await loadFavorites();
+    const isFavorited = favorites.some((q) => q.id === currentQuote.id);
+    favoriteQuoteEl.classList.toggle("selected", isFavorited);
+    favoriteQuoteEl.setAttribute("aria-pressed", isFavorited ? "true" : "false");
+    if (favoriteQuoteLabelEl) {
+      favoriteQuoteLabelEl.textContent = isFavorited ? "Saved" : "Save";
+    }
+  }
+
+  async function toggleFavorite() {
+    if (!currentQuote || !currentQuote.id) return;
+    const favorites = await loadFavorites();
+    const existingIndex = favorites.findIndex((q) => q.id === currentQuote.id);
+    if (existingIndex >= 0) {
+      favorites.splice(existingIndex, 1);
+      await chrome.storage.local.set({ [FAVORITES_KEY]: favorites });
+      showToast("Removed");
+    } else {
+      const entry = {
+        id: currentQuote.id,
+        text: currentQuote.text,
+        author: currentQuote.author,
+        themes: currentQuote.themes || [],
+        savedAt: Date.now(),
+      };
+      const updated = [entry, ...favorites].slice(0, 200);
+      await chrome.storage.local.set({ [FAVORITES_KEY]: updated });
+      showToast("Saved");
+    }
+    updateFavoriteButtonState();
+  }
+
+  async function addToShownQuoteHistory(quote) {
+    if (!quote?.id) return;
+    try {
+      const { [SHOWN_QUOTES_HISTORY_KEY]: history = [] } = await chrome.storage.local.get(SHOWN_QUOTES_HISTORY_KEY);
+      const normalized = Array.isArray(history) ? history : [];
+      const entry = {
+        id: quote.id,
+        text: quote.text,
+        author: quote.author,
+        themes: quote.themes || [],
+        shownAt: Date.now(),
+      };
+      const deduped = [entry, ...normalized.filter((h) => h?.id !== quote.id)].slice(0, 80);
+      await chrome.storage.local.set({ [SHOWN_QUOTES_HISTORY_KEY]: deduped });
+    } catch {
+      // ignore
+    }
+  }
+
+  function formatTimeAgo(timestamp) {
+    const diffMs = Date.now() - timestamp;
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
+
+  async function openHistory() {
+    if (!historyEl || !historyListEl) return;
+    const { [SHOWN_QUOTES_HISTORY_KEY]: history = [] } = await chrome.storage.local.get(SHOWN_QUOTES_HISTORY_KEY);
+    const items = (Array.isArray(history) ? history : []).slice(0, 60);
+    historyListEl.replaceChildren();
+
+    if (items.length === 0) {
+      const empty = document.createElement("div");
+      empty.style.padding = "1rem";
+      empty.style.textAlign = "center";
+      empty.style.color = "inherit";
+      empty.style.opacity = "0.7";
+      empty.textContent = "No history yet";
+      historyListEl.appendChild(empty);
+    } else {
+      items.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "history-item";
+        row.tabIndex = 0;
+
+        const text = document.createElement("div");
+        text.className = "history-item-text";
+        text.textContent = item.text || "";
+        row.appendChild(text);
+
+        const meta = document.createElement("div");
+        meta.className = "history-item-meta";
+        const author = document.createElement("span");
+        author.textContent = item.author || "";
+        const time = document.createElement("span");
+        time.textContent = item.shownAt ? formatTimeAgo(item.shownAt) : "";
+        meta.appendChild(author);
+        meta.appendChild(time);
+        row.appendChild(meta);
+
+        const open = () => {
+          displayQuote(item);
+          closeHistory();
+        };
+        row.addEventListener("click", open);
+        row.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") open();
+        });
+
+        historyListEl.appendChild(row);
+      });
+    }
+
+    historyEl.classList.add("show");
+  }
+
+  function closeHistory() {
+    if (historyEl) historyEl.classList.remove("show");
+  }
+
+  async function loadBlockedThemes() {
+    const { [BLOCKED_THEMES_KEY]: blocked = [] } = await chrome.storage.local.get(BLOCKED_THEMES_KEY);
+    const list = Array.isArray(blocked) ? blocked : [];
+    return list.map((t) => String(t).toLowerCase()).filter(Boolean);
+  }
+
+  async function blockTheme(theme) {
+    const normalized = String(theme || "").toLowerCase().trim();
+    if (!normalized) return;
+    const blocked = await loadBlockedThemes();
+    if (!blocked.includes(normalized)) {
+      const updated = [normalized, ...blocked].slice(0, 200);
+      await chrome.storage.local.set({ [BLOCKED_THEMES_KEY]: updated });
+    }
+    showToast("Less like this");
+    loadQuote({ forceNew: true });
+  }
+
+  function renderThemeChips(quote) {
+    if (!themeChipsEl) return;
+    themeChipsEl.replaceChildren();
+    if (!showThemeChips) return;
+    const themes = Array.isArray(quote?.matchedThemes) ? quote.matchedThemes : [];
+    if (themes.length === 0) return;
+
+    loadBlockedThemes().then((blocked) => {
+      const visibleThemes = themes.map((t) => String(t)).filter((t) => t && !blocked.includes(t.toLowerCase()));
+      if (visibleThemes.length === 0) return;
+      visibleThemes.slice(0, 6).forEach((theme) => {
+        const chip = document.createElement("div");
+        chip.className = "theme-chip";
+
+        const name = document.createElement("span");
+        name.className = "theme-chip-name";
+        name.textContent = theme;
+        chip.appendChild(name);
+
+        const less = document.createElement("button");
+        less.className = "theme-chip-less";
+        less.type = "button";
+        less.setAttribute("aria-label", `Less like ${theme}`);
+        less.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>`;
+        less.addEventListener("click", () => blockTheme(theme));
+        chip.appendChild(less);
+
+        themeChipsEl.appendChild(chip);
+      });
+    });
+  }
+
+  function getLocalDateKey() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  async function getDailyQuoteIfAvailable() {
+    if (!dailyQuoteEnabled) return null;
+    const { [DAILY_QUOTE_KEY]: state } = await chrome.storage.local.get(DAILY_QUOTE_KEY);
+    if (!state || !state.dateKey || !state.quote) return null;
+    if (state.dateKey !== getLocalDateKey()) return null;
+    return state.quote;
+  }
+
+  async function setDailyQuote(quote) {
+    if (!dailyQuoteEnabled || !quote?.text) return;
+    await chrome.storage.local.set({
+      [DAILY_QUOTE_KEY]: {
+        dateKey: getLocalDateKey(),
+        quote: {
+          id: quote.id,
+          text: quote.text,
+          author: quote.author,
+          themes: quote.themes || [],
+          matchedThemes: quote.matchedThemes || null,
+          aiReason: quote.aiReason || null,
+        },
+      },
+    });
   }
 
   /**
@@ -225,8 +496,21 @@
   /**
    * Fetch quote from background worker (with storage fallback)
    */
-  async function loadQuote() {
+  async function loadQuote(options = {}) {
     showLoading();
+    const forceNew = options.forceNew === true;
+
+    if (!forceNew) {
+      try {
+        const daily = await getDailyQuoteIfAvailable();
+        if (daily && daily.text) {
+          displayQuote(daily);
+          return;
+        }
+      } catch {
+        // ignore
+      }
+    }
 
     // Check if extension context is still valid
     if (!isExtensionContextValid()) {
@@ -241,6 +525,7 @@
       const quote = await chrome.runtime.sendMessage({ type: "GET_QUOTE" });
       if (quote && quote.text) {
         displayQuote(quote);
+        await setDailyQuote(quote);
       } else {
         // Service worker returned empty, try storage
         const storageQuote = await loadQuoteFromStorage();
@@ -390,6 +675,7 @@
     dropdownOpen = !dropdownOpen;
     engineDropdownEl.classList.toggle("open", dropdownOpen);
     engineSelectorEl.classList.toggle("open", dropdownOpen);
+    engineSelectorEl.setAttribute("aria-expanded", dropdownOpen ? "true" : "false");
   }
 
   /**
@@ -400,6 +686,7 @@
       dropdownOpen = false;
       engineDropdownEl.classList.remove("open");
       engineSelectorEl.classList.remove("open");
+      engineSelectorEl.setAttribute("aria-expanded", "false");
     }
   }
 
@@ -428,16 +715,21 @@
   async function loadSettings() {
     const { [SETTINGS_KEY]: settings = {} } = await chrome.storage.local.get(SETTINGS_KEY);
     searchEngine = settings.searchEngine || "google";
+    dailyQuoteEnabled = settings.dailyQuoteEnabled ?? false;
+    showThemeChips = settings.showThemeChips ?? true;
     updateSearchPlaceholder();
     updateEngineIcon();
     renderDropdown();
+    if (currentQuote) {
+      renderThemeChips(currentQuote);
+    }
   }
 
   /**
    * Handle refresh click
    */
   function handleRefresh() {
-    loadQuote();
+    loadQuote({ forceNew: true });
   }
 
   /**
@@ -453,6 +745,11 @@
           updateEngineIcon();
           renderDropdown();
           console.log("[Musing] Search engine updated to:", searchEngine);
+        }
+        dailyQuoteEnabled = newSettings.dailyQuoteEnabled ?? dailyQuoteEnabled;
+        showThemeChips = newSettings.showThemeChips ?? showThemeChips;
+        if (currentQuote) {
+          renderThemeChips(currentQuote);
         }
       }
     });
@@ -493,6 +790,17 @@
   refreshEl.addEventListener("click", handleRefresh);
   document.addEventListener("visibilitychange", handleVisibilityChange);
   engineSelectorEl.addEventListener("click", toggleDropdown);
+  if (copyQuoteEl) copyQuoteEl.addEventListener("click", copyCurrentQuote);
+  if (favoriteQuoteEl) favoriteQuoteEl.addEventListener("click", toggleFavorite);
+  if (openHistoryEl) openHistoryEl.addEventListener("click", openHistory);
+  if (historyCloseEl) historyCloseEl.addEventListener("click", closeHistory);
+  if (historyEl) {
+    historyEl.addEventListener("click", (e) => {
+      if (e.target === historyEl) {
+        closeHistory();
+      }
+    });
+  }
 
   // Close dropdown when clicking outside
   document.addEventListener("click", (e) => {
@@ -505,6 +813,13 @@
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && dropdownOpen) {
       closeDropdown();
+      searchEl.focus();
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && historyEl && historyEl.classList.contains("show")) {
+      closeHistory();
       searchEl.focus();
     }
   });

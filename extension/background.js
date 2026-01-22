@@ -2,8 +2,7 @@
  * Background Service Worker
  * Handles quote caching and communication with content scripts
  *
- * FULLY LOCAL - No data sent to external servers
- * Theme extraction and quote matching happens entirely on-device
+ * Local by default - optional BYOK intelligence for Smart Reasons
  */
 
 // Import local modules
@@ -12,6 +11,7 @@ importScripts("lib/theme-extractor.js", "lib/quotes-db.js", "lib/ai-reason-gener
 const MIN_CACHE_SIZE = 5;
 const DEFAULT_CACHE_SIZE = 15;
 const MIN_PROCESS_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes between processing
+const SETTINGS_KEY = "musing_settings";
 
 // Storage keys
 const KEYS = {
@@ -20,10 +20,12 @@ const KEYS = {
   LAST_PROCESS: "last_process_timestamp",
   LAST_SYNC: "last_sync_timestamp",
   SHOWN_QUOTE_IDS: "shown_quote_ids",
+  SHOWN_QUOTES_HISTORY: "shown_quotes_history",
   EXTRACTED_THEMES: "extracted_themes",
   LAST_SCRAPE: "last_scrape_timestamps",
   API_CAPTURES: "api_captures",
   AI_SETTINGS: "ai_settings",
+  BLOCKED_THEMES: "blocked_themes",
   // Notification keys
   LAST_SEEN_VERSION: "last_seen_version",
   PENDING_UPDATE_NOTIFICATION: "pending_update",
@@ -45,6 +47,22 @@ const PLATFORMS = {
 
 // Track background scrape tabs
 const backgroundScrapeTabs = new Map();
+
+async function getBlockedThemesSet() {
+  const { [KEYS.BLOCKED_THEMES]: blocked = [] } = await chrome.storage.local.get(KEYS.BLOCKED_THEMES);
+  const list = Array.isArray(blocked) ? blocked : [];
+  return new Set(list.map((t) => String(t).toLowerCase()).filter(Boolean));
+}
+
+function filterBlockedThemes(themes, blockedSet) {
+  if (!themes || themes.length === 0) return [];
+  return themes.map((t) => String(t)).filter((t) => t && !blockedSet.has(t.toLowerCase()));
+}
+
+function quoteIsBlocked(quote, blockedSet) {
+  const themes = quote?.themes || [];
+  return Array.isArray(themes) && themes.some((t) => blockedSet.has(String(t).toLowerCase()));
+}
 
 // Note: Quotes are now sourced from lib/quotes-db.js (QUOTES_DB)
 // No fallback needed - local database always available
@@ -74,6 +92,25 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     // Initialize with quotes from local database
     await refreshLocalQuoteCache();
 
+    const { [SETTINGS_KEY]: settings } = await chrome.storage.local.get(SETTINGS_KEY);
+    if (!settings || typeof settings !== "object") {
+      await chrome.storage.local.set({
+        [SETTINGS_KEY]: {
+          searchEngine: "google",
+          enableClaude: true,
+          enableChatGPT: true,
+          enableGemini: true,
+          dailyQuoteEnabled: false,
+          showThemeChips: true,
+          proactiveScrapeEnabled: false,
+        },
+      });
+    } else if (typeof settings.proactiveScrapeEnabled !== "boolean") {
+      await chrome.storage.local.set({
+        [SETTINGS_KEY]: { ...settings, proactiveScrapeEnabled: false },
+      });
+    }
+
     // Store initial version
     await chrome.storage.local.set({ [KEYS.LAST_SEEN_VERSION]: currentVersion });
 
@@ -101,6 +138,12 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     await chrome.storage.local.set({ [KEYS.LAST_SEEN_VERSION]: currentVersion });
   }
 });
+
+async function getProactiveScrapeEnabled() {
+  const { [SETTINGS_KEY]: settings = {} } = await chrome.storage.local.get(SETTINGS_KEY);
+  if (typeof settings.proactiveScrapeEnabled === "boolean") return settings.proactiveScrapeEnabled;
+  return true;
+}
 
 // Check for stale scrapes on startup
 chrome.runtime.onStartup.addListener(async () => {
@@ -444,6 +487,10 @@ async function updateScrapeTimestamp(platform) {
  * Check for stale scrapes and trigger proactive scraping
  */
 async function checkAndTriggerProactiveScrapes() {
+  if (!(await getProactiveScrapeEnabled())) {
+    return;
+  }
+
   const { [KEYS.LAST_SCRAPE]: timestamps = {} } = await chrome.storage.local.get(KEYS.LAST_SCRAPE);
   const now = Date.now();
 
@@ -527,17 +574,19 @@ async function processConversationsLocally() {
 
   // Extract themes using local keyword matching
   const themes = extractThemes(combinedText, 5);
+  const blockedSet = await getBlockedThemesSet();
+  const filteredThemes = filterBlockedThemes(themes, blockedSet);
 
-  console.log("[Musing] Extracted themes locally:", themes);
+  console.log("[Musing] Extracted themes locally:", filteredThemes);
 
   // Store extracted themes
   await chrome.storage.local.set({
-    [KEYS.EXTRACTED_THEMES]: themes,
+    [KEYS.EXTRACTED_THEMES]: filteredThemes,
     [KEYS.LAST_PROCESS]: Date.now(),
   });
 
   // Refresh quote cache based on new themes
-  await refreshLocalQuoteCache(themes);
+  await refreshLocalQuoteCache(filteredThemes);
 }
 
 /**
@@ -545,21 +594,25 @@ async function processConversationsLocally() {
  * Uses the bundled quotes database - no network requests
  */
 async function refreshLocalQuoteCache(themes = []) {
+  const blockedSet = await getBlockedThemesSet();
+  const filteredThemes = filterBlockedThemes(themes, blockedSet);
+
   // Get quotes matching themes from local database (async)
-  const matchingQuotes = await findQuotesByThemes(themes, DEFAULT_CACHE_SIZE);
+  const matchingQuotes = await findQuotesByThemes(filteredThemes, DEFAULT_CACHE_SIZE);
+  const unblockedMatching = matchingQuotes.filter((q) => !quoteIsBlocked(q, blockedSet));
 
   // Get existing cache
   const { [KEYS.QUOTES]: existing = [] } = await chrome.storage.local.get(KEYS.QUOTES);
 
   // Merge new quotes with existing, avoiding duplicates
   const existingIds = new Set(existing.map((q) => q.id));
-  const newQuotes = matchingQuotes.filter((q) => !existingIds.has(q.id));
+  const newQuotes = unblockedMatching.filter((q) => !existingIds.has(q.id));
 
   // Keep max 30 quotes in cache, prioritizing new themed quotes
   const merged = [...newQuotes, ...existing].slice(0, 30);
 
   await chrome.storage.local.set({ [KEYS.QUOTES]: merged });
-  console.log("[Musing] Local cache updated, total quotes:", merged.length, "themes:", themes);
+  console.log("[Musing] Local cache updated, total quotes:", merged.length, "themes:", filteredThemes);
 }
 
 /**
@@ -575,6 +628,7 @@ async function getQuoteForDisplay() {
     [KEYS.CONVERSATIONS]: conversations = [],
     [KEYS.AI_SETTINGS]: aiSettings = {},
     [KEYS.HISTORY_THEMES]: historyData = {},
+    [KEYS.BLOCKED_THEMES]: blockedThemes = [],
   } = await chrome.storage.local.get([
     KEYS.QUOTES,
     KEYS.SHOWN_QUOTE_IDS,
@@ -582,11 +636,14 @@ async function getQuoteForDisplay() {
     KEYS.CONVERSATIONS,
     KEYS.AI_SETTINGS,
     KEYS.HISTORY_THEMES,
+    KEYS.BLOCKED_THEMES,
   ]);
+
+  const blockedSet = new Set((Array.isArray(blockedThemes) ? blockedThemes : []).map((t) => String(t).toLowerCase()).filter(Boolean));
 
   // Combine conversation themes with history themes
   const historyThemes = historyData.themes || [];
-  const combinedThemes = [...new Set([...themes, ...historyThemes])];
+  const combinedThemes = filterBlockedThemes([...new Set([...themes, ...historyThemes])], blockedSet);
 
   // Ensure quotes are loaded from JSON
   await ensureQuotesLoaded();
@@ -601,11 +658,11 @@ async function getQuoteForDisplay() {
 
   // Filter out recently shown quotes
   const recentlyShown = new Set(shownIds.slice(0, 10));
-  let available = availableQuotes.filter((q) => !recentlyShown.has(q.id));
+  let available = availableQuotes.filter((q) => !recentlyShown.has(q.id)).filter((q) => !quoteIsBlocked(q, blockedSet));
 
   // If all have been shown, reset and get fresh quotes
   if (available.length === 0) {
-    available = await findQuotesByThemes(combinedThemes, DEFAULT_CACHE_SIZE);
+    available = (await findQuotesByThemes(combinedThemes, DEFAULT_CACHE_SIZE)).filter((q) => !quoteIsBlocked(q, blockedSet));
     await chrome.storage.local.set({ [KEYS.SHOWN_QUOTE_IDS]: [] });
   }
 
@@ -615,6 +672,22 @@ async function getQuoteForDisplay() {
   // Track shown quotes
   const updatedShown = [quote.id, ...shownIds].slice(0, 20);
   await chrome.storage.local.set({ [KEYS.SHOWN_QUOTE_IDS]: updatedShown });
+
+  try {
+    const { [KEYS.SHOWN_QUOTES_HISTORY]: history = [] } = await chrome.storage.local.get(KEYS.SHOWN_QUOTES_HISTORY);
+    const normalized = Array.isArray(history) ? history : [];
+    const entry = {
+      id: quote.id,
+      text: quote.text,
+      author: quote.author,
+      themes: quote.themes || [],
+      shownAt: Date.now(),
+    };
+    const deduped = [entry, ...normalized.filter((h) => h?.id !== quote.id)].slice(0, 80);
+    await chrome.storage.local.set({ [KEYS.SHOWN_QUOTES_HISTORY]: deduped });
+  } catch {
+    // ignore
+  }
 
   // Find matched themes between user's combined themes and quote's themes
   const userThemes = new Set(combinedThemes.map((t) => t.toLowerCase()));

@@ -422,6 +422,55 @@
       text-overflow: ellipsis;
     }
 
+    .favorites-list {
+      max-height: 260px;
+      overflow-y: auto;
+      margin-top: 0.75rem;
+    }
+
+    .favorite-item {
+      padding: 0.75rem;
+      border-radius: 8px;
+      background: light-dark(rgba(0, 0, 0, 0.03), rgba(255, 255, 255, 0.05));
+      border: 1px solid light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.08));
+      margin-bottom: 0.5rem;
+    }
+
+    .favorite-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .favorite-text {
+      font-size: 0.75rem;
+      color: light-dark(#202124, #e8eaed);
+      line-height: 1.4;
+      margin-bottom: 0.5rem;
+    }
+
+    .favorite-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 0.75rem;
+      color: light-dark(#606060, #a0a0a0);
+      font-size: 0.7rem;
+      align-items: center;
+    }
+
+    .favorite-remove {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: inherit;
+      opacity: 0.7;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+    }
+
+    .favorite-remove:hover {
+      opacity: 1;
+      background: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.1));
+    }
+
     .quotes-count {
       font-size: 0.8125rem;
       color: light-dark(#606060, #a0a0a0);
@@ -607,6 +656,40 @@
       min-width: 3rem;
       text-align: center;
     }
+
+    .pill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.5rem;
+      border-radius: 999px;
+      background: light-dark(rgba(0, 0, 0, 0.05), rgba(255, 255, 255, 0.08));
+      border: 1px solid light-dark(rgba(0, 0, 0, 0.12), rgba(255, 255, 255, 0.15));
+      font-size: 0.75rem;
+      color: inherit;
+    }
+
+    .pill-remove {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.1rem 0.25rem;
+      border-radius: 6px;
+      color: inherit;
+      opacity: 0.65;
+    }
+
+    .pill-remove:hover {
+      opacity: 1;
+      background: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.1));
+    }
   </style>
 </head>
 <body>
@@ -734,6 +817,47 @@
     </div>
 
     <div class="section">
+      <div class="section-title">Personalization</div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Daily Quote</div>
+          <div class="setting-sublabel">Show one quote per day unless refreshed</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="daily-quote">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Theme Chips</div>
+          <div class="setting-sublabel">Show why a quote was chosen</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="show-theme-chips" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Proactive Refresh</div>
+          <div class="setting-sublabel">May open background tabs to refresh themes</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="proactive-scrape">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="setting-row">
+        <div>
+          <div class="setting-label">Blocked Themes</div>
+          <div class="setting-sublabel">Manage “less like this” themes</div>
+        </div>
+        <button class="btn btn-secondary" id="manage-blocked-themes">Manage</button>
+      </div>
+    </div>
+
+    <div class="section">
       <div class="section-title">Smart Reasons</div>
       <div class="setting-row">
         <div>
@@ -848,6 +972,14 @@
     </div>
 
     <div class="section">
+      <div class="section-title">Favorites</div>
+      <div class="sync-row">
+        <div class="quotes-count" id="favorites-count">0 saved</div>
+        <button class="btn btn-secondary" id="view-favorites-btn">View</button>
+      </div>
+    </div>
+
+    <div class="section">
       <div class="section-title">Debug</div>
       <div class="debug-row">
         <button class="btn btn-secondary" id="clear-logs-btn">Clear Data</button>
@@ -877,6 +1009,39 @@
 
         <h4>have feedback?</h4>
         <p>would love to hear from you. ping me at <a href="https://x.com/pghqdev">@pghqdev</a></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="blocked-themes-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Blocked Themes</h3>
+        <button class="modal-close" id="blocked-themes-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>These themes will be avoided when selecting quotes.</p>
+        <div class="pill-list" id="blocked-themes-list"></div>
+        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+          <button class="btn btn-secondary" id="blocked-themes-clear">Clear all</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="favorites-modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Favorites</h3>
+        <button class="modal-close" id="favorites-close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="favorites-empty" style="opacity: 0.7;">No favorites yet</div>
+        <div class="favorites-list" id="favorites-list"></div>
+        <div style="display: flex; gap: 0.5rem; margin-top: 1rem;">
+          <button class="btn btn-secondary" id="favorites-export">Copy JSON</button>
+          <button class="btn btn-secondary" id="favorites-clear">Clear all</button>
+        </div>
       </div>
     </div>
   </div>

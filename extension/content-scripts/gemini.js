@@ -20,6 +20,7 @@
   let observer = null;
   let scrapeInterval = null;
   let debounceTimeout = null;
+  let periodicTimeout = null;
 
   /**
    * Check if Gemini scraping is enabled
@@ -307,6 +308,25 @@
     }, DEBOUNCE_MS);
   }
 
+  function findObserverRoot() {
+    const candidates = [
+      "[data-message-author-role='user']",
+      "[data-message-author-role='model']",
+      ".markdown-main-panel",
+      "[class*='response-content']",
+      "[class*='conversation-turn']",
+      "main",
+    ];
+
+    for (const selector of candidates) {
+      const el = document.querySelector(selector);
+      if (el) {
+        return el.closest("main") || el.parentElement || document.body;
+      }
+    }
+    return document.body;
+  }
+
   /**
    * Observe DOM changes for new messages
    */
@@ -318,6 +338,8 @@
       return null;
     }
 
+    const root = findObserverRoot();
+
     observer = new MutationObserver((mutations) => {
       const hasNewContent = mutations.some(
         (m) => m.addedNodes.length > 0 || m.type === "characterData"
@@ -328,7 +350,7 @@
       }
     });
 
-    observer.observe(document.body, {
+    observer.observe(root, {
       childList: true,
       subtree: true,
       characterData: true,
@@ -351,6 +373,11 @@
     if (scrapeInterval) {
       clearInterval(scrapeInterval);
       scrapeInterval = null;
+    }
+
+    if (periodicTimeout) {
+      clearTimeout(periodicTimeout);
+      periodicTimeout = null;
     }
 
     if (debounceTimeout) {
@@ -385,17 +412,24 @@
     // Start observing
     observeChanges();
 
-    // Periodic scrape as backup
-    scrapeInterval = setInterval(async () => {
-      if (await checkEnabled()) {
-        const text = scrapeConversation();
-        sendUpdate(text);
+    const schedulePeriodicScrape = async (delayMs) => {
+      periodicTimeout = setTimeout(async () => {
+        if (await checkEnabled()) {
+          const text = scrapeConversation();
+          const isLikelyChange = text && text !== lastScrapedText;
+          sendUpdate(text);
 
-        // Periodically update sidebar too
-        const sidebarTitles = scrapeSidebar();
-        sendScrapeComplete(sidebarTitles);
-      }
-    }, SCRAPE_INTERVAL_MS);
+          const sidebarTitles = scrapeSidebar();
+          sendScrapeComplete(sidebarTitles);
+
+          schedulePeriodicScrape(isLikelyChange ? SCRAPE_INTERVAL_MS : 120000);
+          return;
+        }
+        schedulePeriodicScrape(120000);
+      }, delayMs);
+    };
+
+    schedulePeriodicScrape(SCRAPE_INTERVAL_MS);
 
     // Cleanup on page unload
     window.addEventListener("beforeunload", cleanup);

@@ -9,12 +9,17 @@ const LAST_SYNC_KEY = "last_sync_timestamp";
 const CONVERSATIONS_KEY = "recent_conversations";
 const QUOTES_KEY = "cached_quotes";
 const SCRAPE_LOG_KEY = "scrape_log";
+const BLOCKED_THEMES_KEY = "blocked_themes";
+const FAVORITES_KEY = "favorite_quotes";
 
 const DEFAULTS = {
   searchEngine: "google",
   enableClaude: true,
   enableChatGPT: true,
   enableGemini: true,
+  dailyQuoteEnabled: false,
+  showThemeChips: true,
+  proactiveScrapeEnabled: false,
 };
 
 const AI_DEFAULTS = {
@@ -72,12 +77,20 @@ const searchEngineEl = document.getElementById("search-engine");
 const enableClaudeEl = document.getElementById("enable-claude");
 const enableChatGPTEl = document.getElementById("enable-chatgpt");
 const enableGeminiEl = document.getElementById("enable-gemini");
+const dailyQuoteEl = document.getElementById("daily-quote");
+const showThemeChipsEl = document.getElementById("show-theme-chips");
+const proactiveScrapeEl = document.getElementById("proactive-scrape");
+const manageBlockedThemesEl = document.getElementById("manage-blocked-themes");
 const statusEl = document.getElementById("status");
 const lastSyncEl = document.getElementById("last-sync");
 const syncBtnEl = document.getElementById("sync-btn");
 const privacyLinkEl = document.getElementById("privacy-link");
 const privacyModalEl = document.getElementById("privacy-modal");
 const privacyCloseEl = document.getElementById("privacy-close");
+const blockedThemesModalEl = document.getElementById("blocked-themes-modal");
+const blockedThemesCloseEl = document.getElementById("blocked-themes-close");
+const blockedThemesListEl = document.getElementById("blocked-themes-list");
+const blockedThemesClearEl = document.getElementById("blocked-themes-clear");
 
 // AI settings elements
 const enableAiEl = document.getElementById("enable-ai");
@@ -113,11 +126,19 @@ const PROVIDER_KEY_URLS = {
 const logsEmptyEl = document.getElementById("logs-empty");
 const logsListEl = document.getElementById("logs-list");
 const quotesCountEl = document.getElementById("quotes-count");
+const favoritesCountEl = document.getElementById("favorites-count");
+const viewFavoritesBtnEl = document.getElementById("view-favorites-btn");
 const clearLogsBtnEl = document.getElementById("clear-logs-btn");
 const viewRawBtnEl = document.getElementById("view-raw-btn");
 const rawDataModalEl = document.getElementById("raw-data-modal");
 const rawDataCloseEl = document.getElementById("raw-data-close");
 const rawDataPreEl = document.getElementById("raw-data-pre");
+const favoritesModalEl = document.getElementById("favorites-modal");
+const favoritesCloseEl = document.getElementById("favorites-close");
+const favoritesEmptyEl = document.getElementById("favorites-empty");
+const favoritesListEl = document.getElementById("favorites-list");
+const favoritesExportEl = document.getElementById("favorites-export");
+const favoritesClearEl = document.getElementById("favorites-clear");
 
 // Pagination elements
 const logsPaginationEl = document.getElementById("logs-pagination");
@@ -139,6 +160,9 @@ async function loadSettings() {
   enableClaudeEl.checked = settings.enableClaude ?? DEFAULTS.enableClaude;
   enableChatGPTEl.checked = settings.enableChatGPT ?? DEFAULTS.enableChatGPT;
   enableGeminiEl.checked = settings.enableGemini ?? DEFAULTS.enableGemini;
+  dailyQuoteEl.checked = settings.dailyQuoteEnabled ?? DEFAULTS.dailyQuoteEnabled;
+  showThemeChipsEl.checked = settings.showThemeChips ?? DEFAULTS.showThemeChips;
+  proactiveScrapeEl.checked = settings.proactiveScrapeEnabled ?? DEFAULTS.proactiveScrapeEnabled;
 }
 
 /**
@@ -150,6 +174,9 @@ async function saveSettings() {
     enableClaude: enableClaudeEl.checked,
     enableChatGPT: enableChatGPTEl.checked,
     enableGemini: enableGeminiEl.checked,
+    dailyQuoteEnabled: dailyQuoteEl.checked,
+    showThemeChips: showThemeChipsEl.checked,
+    proactiveScrapeEnabled: proactiveScrapeEl.checked,
   };
 
   await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
@@ -579,6 +606,160 @@ function hidePrivacyModal() {
   privacyModalEl.classList.remove("show");
 }
 
+async function loadBlockedThemes() {
+  const { [BLOCKED_THEMES_KEY]: blocked = [] } = await chrome.storage.local.get(BLOCKED_THEMES_KEY);
+  const list = Array.isArray(blocked) ? blocked : [];
+  return list.map((t) => String(t).toLowerCase()).filter(Boolean);
+}
+
+function renderBlockedThemes(themes) {
+  if (!blockedThemesListEl) return;
+  blockedThemesListEl.replaceChildren();
+
+  if (!themes || themes.length === 0) {
+    const empty = document.createElement("div");
+    empty.style.opacity = "0.7";
+    empty.style.fontSize = "0.75rem";
+    empty.style.marginTop = "0.75rem";
+    empty.textContent = "No blocked themes";
+    blockedThemesListEl.appendChild(empty);
+    return;
+  }
+
+  themes.slice(0, 200).forEach((theme) => {
+    const pill = document.createElement("div");
+    pill.className = "pill";
+
+    const label = document.createElement("span");
+    label.textContent = theme;
+    pill.appendChild(label);
+
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "pill-remove";
+    removeBtn.type = "button";
+    removeBtn.textContent = "×";
+    removeBtn.addEventListener("click", () => removeBlockedTheme(theme));
+    pill.appendChild(removeBtn);
+
+    blockedThemesListEl.appendChild(pill);
+  });
+}
+
+async function refreshBlockedThemesUI() {
+  const themes = await loadBlockedThemes();
+  renderBlockedThemes(themes);
+}
+
+async function openBlockedThemesModal() {
+  if (!blockedThemesModalEl) return;
+  blockedThemesModalEl.classList.add("show");
+  await refreshBlockedThemesUI();
+}
+
+function closeBlockedThemesModal() {
+  if (!blockedThemesModalEl) return;
+  blockedThemesModalEl.classList.remove("show");
+}
+
+async function removeBlockedTheme(theme) {
+  const normalized = String(theme || "").toLowerCase().trim();
+  if (!normalized) return;
+  const themes = await loadBlockedThemes();
+  const updated = themes.filter((t) => t !== normalized);
+  await chrome.storage.local.set({ [BLOCKED_THEMES_KEY]: updated });
+  await refreshBlockedThemesUI();
+  showStatus("Saved", "success");
+}
+
+async function clearBlockedThemes() {
+  await chrome.storage.local.set({ [BLOCKED_THEMES_KEY]: [] });
+  await refreshBlockedThemesUI();
+  showStatus("Cleared", "success");
+}
+
+async function loadFavorites() {
+  const { [FAVORITES_KEY]: favorites = [] } = await chrome.storage.local.get(FAVORITES_KEY);
+  return Array.isArray(favorites) ? favorites : [];
+}
+
+function renderFavorites(favorites) {
+  if (!favoritesListEl || !favoritesEmptyEl) return;
+  favoritesListEl.replaceChildren();
+  const list = Array.isArray(favorites) ? favorites : [];
+  favoritesEmptyEl.style.display = list.length === 0 ? "block" : "none";
+
+  list.slice(0, 200).forEach((fav) => {
+    const item = document.createElement("div");
+    item.className = "favorite-item";
+
+    const text = document.createElement("div");
+    text.className = "favorite-text";
+    text.textContent = fav?.text ? `"${fav.text}"` : "";
+    item.appendChild(text);
+
+    const meta = document.createElement("div");
+    meta.className = "favorite-meta";
+    const author = document.createElement("span");
+    author.textContent = fav?.author ? `— ${fav.author}` : "";
+    meta.appendChild(author);
+
+    const remove = document.createElement("button");
+    remove.className = "favorite-remove";
+    remove.type = "button";
+    remove.textContent = "Remove";
+    remove.addEventListener("click", () => removeFavorite(fav?.id));
+    meta.appendChild(remove);
+
+    item.appendChild(meta);
+    favoritesListEl.appendChild(item);
+  });
+}
+
+async function refreshFavoritesUI() {
+  const favorites = await loadFavorites();
+  renderFavorites(favorites);
+  if (favoritesCountEl) {
+    favoritesCountEl.textContent = `${favorites.length} saved`;
+  }
+}
+
+async function openFavoritesModal() {
+  if (!favoritesModalEl) return;
+  favoritesModalEl.classList.add("show");
+  await refreshFavoritesUI();
+}
+
+function closeFavoritesModal() {
+  if (!favoritesModalEl) return;
+  favoritesModalEl.classList.remove("show");
+}
+
+async function removeFavorite(id) {
+  if (!id) return;
+  const favorites = await loadFavorites();
+  const updated = favorites.filter((f) => f?.id !== id);
+  await chrome.storage.local.set({ [FAVORITES_KEY]: updated });
+  await refreshFavoritesUI();
+  showStatus("Saved", "success");
+}
+
+async function clearFavorites() {
+  await chrome.storage.local.set({ [FAVORITES_KEY]: [] });
+  await refreshFavoritesUI();
+  showStatus("Cleared", "success");
+}
+
+async function exportFavorites() {
+  const favorites = await loadFavorites();
+  const payload = JSON.stringify(favorites, null, 2);
+  try {
+    await navigator.clipboard.writeText(payload);
+    showStatus("Copied", "success");
+  } catch {
+    showStatus("Copy failed", "error");
+  }
+}
+
 /**
  * Switch tabs
  */
@@ -601,13 +782,17 @@ function switchTab(tabName) {
  * Load and display scrape logs
  */
 async function loadLogs() {
-  const data = await chrome.storage.local.get([SCRAPE_LOG_KEY, CONVERSATIONS_KEY, QUOTES_KEY]);
+  const data = await chrome.storage.local.get([SCRAPE_LOG_KEY, CONVERSATIONS_KEY, QUOTES_KEY, FAVORITES_KEY]);
   const logs = data[SCRAPE_LOG_KEY] || [];
   const conversations = data[CONVERSATIONS_KEY] || [];
   const quotes = data[QUOTES_KEY] || [];
+  const favorites = data[FAVORITES_KEY] || [];
 
   // Update quotes count
   quotesCountEl.textContent = `${quotes.length} quotes cached`;
+  if (favoritesCountEl) {
+    favoritesCountEl.textContent = `${Array.isArray(favorites) ? favorites.length : 0} saved`;
+  }
 
   // If no scrape logs but we have conversations, show them instead
   allLogs = logs.length > 0 ? logs : conversations.map((text, i) => ({
@@ -759,12 +944,21 @@ searchEngineEl.addEventListener("change", saveSettings);
 enableClaudeEl.addEventListener("change", saveSettings);
 enableChatGPTEl.addEventListener("change", saveSettings);
 enableGeminiEl.addEventListener("change", saveSettings);
+dailyQuoteEl.addEventListener("change", saveSettings);
+showThemeChipsEl.addEventListener("change", saveSettings);
+proactiveScrapeEl.addEventListener("change", saveSettings);
+manageBlockedThemesEl.addEventListener("click", openBlockedThemesModal);
 syncBtnEl.addEventListener("click", handleSync);
 privacyLinkEl.addEventListener("click", showPrivacyModal);
 privacyCloseEl.addEventListener("click", hidePrivacyModal);
 privacyModalEl.addEventListener("click", (e) => {
   if (e.target === privacyModalEl) hidePrivacyModal();
 });
+blockedThemesCloseEl.addEventListener("click", closeBlockedThemesModal);
+blockedThemesModalEl.addEventListener("click", (e) => {
+  if (e.target === blockedThemesModalEl) closeBlockedThemesModal();
+});
+blockedThemesClearEl.addEventListener("click", clearBlockedThemes);
 
 // Event listeners - AI Settings
 enableAiEl.addEventListener("change", () => {
@@ -795,10 +989,17 @@ tabBtns.forEach((btn) => {
 // Event listeners - Logs
 clearLogsBtnEl.addEventListener("click", handleClearLogs);
 viewRawBtnEl.addEventListener("click", handleViewRaw);
+viewFavoritesBtnEl.addEventListener("click", openFavoritesModal);
 rawDataCloseEl.addEventListener("click", hideRawDataModal);
 rawDataModalEl.addEventListener("click", (e) => {
   if (e.target === rawDataModalEl) hideRawDataModal();
 });
+favoritesCloseEl.addEventListener("click", closeFavoritesModal);
+favoritesModalEl.addEventListener("click", (e) => {
+  if (e.target === favoritesModalEl) closeFavoritesModal();
+});
+favoritesExportEl.addEventListener("click", exportFavorites);
+favoritesClearEl.addEventListener("click", clearFavorites);
 
 // Event listeners - Pagination
 logsPrevBtnEl.addEventListener("click", goToPrevPage);

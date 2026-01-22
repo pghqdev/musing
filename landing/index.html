@@ -85,7 +85,7 @@
     .hero-content {
       position: relative;
       z-index: 1;
-      max-width: 800px;
+      max-width: 900px;
     }
 
     .logo {
@@ -93,12 +93,7 @@
       align-items: center;
       justify-content: center;
       gap: 16px;
-      font-size: 2.5rem;
-      font-weight: 600;
-      color: var(--text-primary);
       margin-bottom: 48px;
-      letter-spacing: 0.05em;
-      text-transform: lowercase;
     }
 
     .logo img {
@@ -110,18 +105,18 @@
 
     .tagline {
       font-family: Georgia, 'Times New Roman', serif;
-      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-size: clamp(2.5rem, 6vw, 4rem);
       font-weight: 400;
       font-style: italic;
-      line-height: 1.3;
+      line-height: 1.2;
       margin-bottom: 24px;
       color: var(--text-primary);
     }
 
     .subtitle {
-      font-size: clamp(1rem, 2vw, 1.25rem);
+      font-size: clamp(1.1rem, 2vw, 1.4rem);
       color: var(--text-secondary);
-      max-width: 600px;
+      max-width: 700px;
       margin: 0 auto 48px;
     }
 
@@ -131,10 +126,10 @@
       gap: 12px;
       background: var(--accent);
       color: #fff;
-      padding: 16px 32px;
+      padding: 18px 36px;
       border-radius: var(--radius);
       text-decoration: none;
-      font-size: 1.1rem;
+      font-size: 1.2rem;
       font-weight: 500;
       transition: transform var(--transition), box-shadow var(--transition), background var(--transition);
       box-shadow: 0 4px 24px rgba(74, 158, 255, 0.3);
@@ -151,45 +146,87 @@
       height: 24px;
     }
 
-    /* Quote Display */
-    .quote-display {
+    /* UI Mockup */
+    .ui-showcase {
       margin-top: 80px;
-      padding: 40px;
-      background: var(--bg-secondary);
-      border-radius: var(--radius);
-      max-width: 600px;
-      width: 100%;
       position: relative;
+      width: 100%;
+      max-width: 900px;
+      perspective: 1000px;
     }
 
-    .quote-display::before {
-      content: '"';
-      position: absolute;
-      top: 16px;
-      left: 24px;
+    .browser-mockup {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--bg-tertiary);
+      overflow: hidden;
+      transform: rotateX(2deg);
+      transition: transform 0.5s ease;
+    }
+
+    .browser-mockup:hover {
+      transform: rotateX(0deg);
+    }
+
+    .browser-bar {
+      background: var(--bg-tertiary);
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .browser-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .dot.red { background: #ff5f56; }
+    .dot.yellow { background: #ffbd2e; }
+    .dot.green { background: #27c93f; }
+
+    .browser-content {
+      padding: 60px;
+      min-height: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: var(--bg-primary);
+    }
+
+    .mock-quote {
       font-family: Georgia, serif;
-      font-size: 4rem;
-      color: var(--accent);
-      opacity: 0.3;
-      line-height: 1;
-    }
-
-    .quote-text {
-      font-family: Georgia, 'Times New Roman', serif;
-      font-size: 1.25rem;
+      font-size: 2rem;
       font-style: italic;
-      line-height: 1.6;
-      margin-bottom: 16px;
-      min-height: 80px;
+      margin-bottom: 24px;
+      max-width: 80%;
     }
 
-    .quote-author {
+    .mock-author {
       color: var(--text-secondary);
-      font-size: 0.95rem;
+      font-size: 1.1rem;
     }
 
-    .quote-author span {
-      color: var(--accent);
+    .mock-search {
+      margin-top: 60px;
+      width: 60%;
+      height: 48px;
+      background: var(--bg-secondary);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      color: var(--text-secondary);
+      border: 1px solid var(--bg-tertiary);
     }
 
     /* Section Styles */
@@ -198,17 +235,18 @@
     }
 
     .section-title {
-      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      font-size: clamp(2rem, 4vw, 3rem);
       text-align: center;
-      margin-bottom: 16px;
+      margin-bottom: 24px;
+      font-weight: 700;
     }
 
     .section-subtitle {
       text-align: center;
       color: var(--text-secondary);
-      max-width: 600px;
-      margin: 0 auto 64px;
-      font-size: 1.1rem;
+      max-width: 700px;
+      margin: 0 auto 80px;
+      font-size: 1.25rem;
     }
 
     /* How It Works */
@@ -218,89 +256,55 @@
 
     .steps {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 32px;
-      max-width: 1000px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 40px;
+      max-width: 1200px;
       margin: 0 auto;
     }
 
     .step {
-      text-align: center;
-      padding: 40px 32px;
+      padding: 40px;
       background: var(--bg-primary);
       border-radius: var(--radius);
-      opacity: 0;
-      transform: translateY(30px);
-      transition: opacity 0.6s ease, transform 0.6s ease, box-shadow var(--transition);
-    }
-
-    .step.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .step:hover {
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+      position: relative;
+      overflow: hidden;
     }
 
     .step-number {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 48px;
-      height: 48px;
-      background: var(--accent);
-      color: #fff;
-      border-radius: 50%;
-      font-size: 1.25rem;
-      font-weight: 600;
-      margin-bottom: 24px;
+      position: absolute;
+      top: -20px;
+      right: -20px;
+      font-size: 8rem;
+      font-weight: 800;
+      color: var(--bg-secondary);
+      opacity: 0.5;
+      line-height: 1;
+      z-index: 0;
     }
 
-    .step-icons {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .step-icons img {
-      width: 40px;
-      height: 40px;
-      border-radius: 8px;
-    }
-
-    .step-icon {
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--bg-tertiary);
-      border-radius: 8px;
-    }
-
-    .step-icon svg {
-      width: 20px;
-      height: 20px;
-      color: var(--accent);
+    .step-content {
+      position: relative;
+      z-index: 1;
     }
 
     .step h3 {
-      font-size: 1.25rem;
-      margin-bottom: 12px;
+      font-size: 1.5rem;
+      margin-bottom: 16px;
+      color: var(--accent);
     }
 
     .step p {
       color: var(--text-secondary);
+      font-size: 1.1rem;
     }
 
     /* Features */
     .features-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 24px;
-      max-width: 1000px;
+      gap: 32px;
+      max-width: 1200px;
       margin: 0 auto;
     }
 
@@ -308,307 +312,169 @@
       padding: 32px;
       background: var(--bg-secondary);
       border-radius: var(--radius);
-      opacity: 0;
-      transform: translateY(30px);
-      transition: opacity 0.6s ease, transform 0.6s ease, box-shadow var(--transition), background var(--transition);
-    }
-
-    .feature.visible {
-      opacity: 1;
-      transform: translateY(0);
+      transition: transform 0.3s ease;
     }
 
     .feature:hover {
-      background: var(--bg-tertiary);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      transform: translateY(-5px);
     }
 
     .feature-icon {
-      width: 48px;
-      height: 48px;
-      background: rgba(74, 158, 255, 0.15);
-      border-radius: var(--radius-sm);
+      width: 56px;
+      height: 56px;
+      background: rgba(74, 158, 255, 0.1);
+      border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 20px;
-    }
-
-    .feature-icon svg {
-      width: 24px;
-      height: 24px;
+      margin-bottom: 24px;
       color: var(--accent);
     }
 
     .feature h3 {
-      font-size: 1.15rem;
-      margin-bottom: 8px;
+      font-size: 1.25rem;
+      margin-bottom: 12px;
     }
 
-    .feature p {
-      color: var(--text-secondary);
-      font-size: 0.95rem;
+    /* Testimonials */
+    .testimonials {
+      background: var(--bg-tertiary);
     }
 
-    /* Privacy */
-    .privacy {
-      background: var(--bg-secondary);
-    }
-
-    .privacy-content {
-      max-width: 700px;
+    .testimonial-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 32px;
+      max-width: 1000px;
       margin: 0 auto;
-      text-align: center;
     }
 
-    .privacy-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      background: rgba(74, 158, 255, 0.15);
-      padding: 16px 32px;
+    .testimonial {
+      background: var(--bg-primary);
+      padding: 40px;
       border-radius: var(--radius);
-      margin-bottom: 32px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .testimonial-text {
+      font-style: italic;
       font-size: 1.1rem;
+      margin-bottom: 24px;
+      color: var(--text-primary);
     }
 
-    .privacy-badge svg {
-      width: 24px;
-      height: 24px;
-      color: var(--accent);
-    }
-
-    .privacy-points {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 24px;
-      margin-top: 32px;
-    }
-
-    .privacy-point {
+    .testimonial-author {
       display: flex;
       align-items: center;
-      gap: 8px;
-      color: var(--text-secondary);
+      gap: 16px;
     }
 
-    .privacy-point svg {
-      width: 20px;
-      height: 20px;
-      color: #4ade80;
+    .author-avatar {
+      width: 48px;
+      height: 48px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+
+    .author-info div:first-child {
+      font-weight: 600;
+    }
+    
+    .author-info div:last-child {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
     }
 
     /* Footer */
     footer {
-      padding: 48px 24px;
-      text-align: center;
+      padding: 60px 24px;
+      background: var(--bg-secondary);
       border-top: 1px solid var(--bg-tertiary);
+      text-align: center;
     }
 
     .footer-content {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      max-width: 800px;
+      max-width: 1200px;
       margin: 0 auto;
-    }
-
-    .footer-brand {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 12px;
-    }
-
-    .footer-brand img {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-    }
-
-    .footer-brand span {
-      font-weight: 600;
-      color: var(--text-primary);
-    }
-
-    .footer-links {
-      display: flex;
-      align-items: center;
-      gap: 24px;
+      gap: 32px;
     }
 
     .footer-links a {
       color: var(--text-secondary);
       text-decoration: none;
-      transition: color var(--transition);
-      font-size: 0.9rem;
+      margin: 0 16px;
+      font-size: 1.1rem;
     }
-
+    
     .footer-links a:hover {
       color: var(--accent);
     }
 
-    .footer-social {
-      display: flex;
-      gap: 12px;
-    }
-
-    .footer-social a {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      color: var(--text-secondary);
-      background: var(--bg-secondary);
-      transition: background var(--transition), color var(--transition);
-    }
-
-    .footer-social a:hover {
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-    }
-
-    .footer-social svg {
-      width: 18px;
-      height: 18px;
-    }
-
-    .copyright {
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-      margin-top: 32px;
-    }
-
-    /* Animations */
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes typing {
-      from { width: 0 }
-      to { width: 100% }
-    }
-
-    @keyframes blink {
-      50% { border-color: transparent }
-    }
-
-    .hero-content > * {
-      animation: fadeInUp 0.8s ease forwards;
-    }
-
-    .hero-content > *:nth-child(1) { animation-delay: 0.1s; }
-    .hero-content > *:nth-child(2) { animation-delay: 0.2s; }
-    .hero-content > *:nth-child(3) { animation-delay: 0.3s; }
-    .hero-content > *:nth-child(4) { animation-delay: 0.4s; }
-
-    .quote-display {
-      animation: fadeInUp 0.8s ease 0.5s forwards;
-      opacity: 0;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .hero {
-        padding: 60px 20px;
-      }
-
-      .quote-display {
-        padding: 32px 24px;
-        margin-top: 48px;
-      }
-
-      .quote-display::before {
-        font-size: 3rem;
-        top: 8px;
-        left: 16px;
-      }
-
-      section {
-        padding: 80px 20px;
-      }
-
-      .steps {
-        grid-template-columns: 1fr;
-      }
-
-      .features-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .privacy-points {
-        flex-direction: column;
-        align-items: center;
-      }
-
-      .footer-content {
-        flex-direction: column;
-        gap: 24px;
-      }
-
-      .footer-links {
-        order: 1;
-      }
-
-      .footer-social {
-        order: 2;
-      }
-
-      .footer-brand {
-        order: 0;
-      }
-    }
-
-    @media (max-width: 480px) {
-      .tagline {
-        font-size: 1.75rem;
-      }
-
-      .cta-button {
-        padding: 14px 28px;
-        font-size: 1rem;
-      }
-    }
-
-    /* Scroll reveal utility */
+    /* Animation Utilities */
     .reveal {
       opacity: 0;
       transform: translateY(30px);
-      transition: opacity 0.6s ease, transform 0.6s ease;
+      transition: all 0.8s ease;
     }
 
     .reveal.visible {
       opacity: 1;
       transform: translateY(0);
     }
+
+    @media (max-width: 768px) {
+      .hero { padding: 60px 20px; }
+      .tagline { font-size: 2.5rem; }
+      .browser-content { padding: 30px; min-height: 300px; }
+      .mock-quote { font-size: 1.5rem; }
+      .mock-search { width: 90%; }
+      .steps { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
+
   <!-- Hero Section -->
-  <section id="hero" class="hero">
+  <section class="hero">
     <div class="hero-content">
-      <div class="logo"><img src="icons/icon128.png" alt="musing icon" width="128" height="128"></div>
+      <div class="logo">
+        <img src="icons/icon128.png" alt="Musing Logo">
+      </div>
       <h1 class="tagline">let the wisdom of the past guide your present</h1>
-      <p class="subtitle">musing transforms your new tab into a personalized sanctuary of timeless quotes — local by default, with optional BYOK intelligence for smarter explanations</p>
-      <a href="https://chromewebstore.google.com/detail/musing/hkfpdamehcnbhfeilamlbeabgdlgnjfk" class="cta-button" id="cta">
+      <p class="subtitle">musing transforms your new tab into a personalized sanctuary of timeless quotes — local by default, with optional BYOK intelligence.</p>
+      
+      <a href="https://chromewebstore.google.com/detail/musing/hkfpdamehcnbhfeilamlbeabgdlgnjfk" class="cta-button">
         <svg viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
         </svg>
         Add to Chrome
       </a>
     </div>
-    <div class="quote-display">
-      <p class="quote-text" id="quote-text"></p>
-      <p class="quote-author">— <span id="quote-author"></span></p>
+
+    <!-- Visual Feature Representation (CSS Mockup) -->
+    <div class="ui-showcase reveal">
+      <div class="browser-mockup">
+        <div class="browser-bar">
+          <div class="browser-dots">
+            <div class="dot red"></div>
+            <div class="dot yellow"></div>
+            <div class="dot green"></div>
+          </div>
+        </div>
+        <div class="browser-content">
+          <div class="mock-quote">"The only true wisdom is in knowing you know nothing."</div>
+          <div class="mock-author">— Socrates</div>
+          <div class="mock-search">Search Google or type a URL...</div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -616,114 +482,106 @@
   <section id="how-it-works" class="how-it-works">
     <div class="container">
       <h2 class="section-title">How It Works</h2>
-      <p class="section-subtitle">Musing learns locally from your AI conversations — optional BYOK features can add smarter explanations</p>
+      <p class="section-subtitle">A privacy-first approach to personalization</p>
+      
       <div class="steps">
-        <div class="step">
+        <div class="step reveal">
           <div class="step-number">1</div>
-          <div class="step-icons">
-            <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg></div>
-            <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-            <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <div class="step-content">
+            <h3>Chat Naturally</h3>
+            <p>Use your favorite AI assistants like Claude, ChatGPT, or Gemini as you normally would.</p>
           </div>
-          <h3>Chat with AI</h3>
-          <p>Use Claude, ChatGPT, or Gemini as you normally would</p>
         </div>
-        <div class="step">
+        <div class="step reveal">
           <div class="step-number">2</div>
-          <div class="step-icons">
-            <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+          <div class="step-content">
+            <h3>Local Learning</h3>
+            <p>Musing analyzes conversation themes directly in your browser. No data is ever sent to our servers.</p>
           </div>
-          <h3>Musing Learns</h3>
-          <p>Your interests and themes are captured locally — optional BYOK can explain recommendations in plain language</p>
         </div>
-        <div class="step">
+        <div class="step reveal">
           <div class="step-number">3</div>
-          <div class="step-icons">
-            <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></div>
+          <div class="step-content">
+            <h3>Instant Inspiration</h3>
+            <p>Open a new tab to see a curated quote that resonates with your current thoughts and context.</p>
           </div>
-          <h3>Personalized Wisdom</h3>
-          <p>Open a new tab to discover quotes from history's greatest minds, tailored to your interests</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Features -->
-  <section id="features" class="features">
+  <!-- Feature Highlights -->
+  <section class="features">
     <div class="container">
-      <h2 class="section-title">Beautiful & Thoughtful</h2>
-      <p class="section-subtitle">Every detail designed to bring calm and inspiration to your browsing</p>
+      <h2 class="section-title">Designed for Focus</h2>
+      <p class="section-subtitle">Everything you need, nothing you don't</p>
+      
       <div class="features-grid">
-        <div class="feature">
-          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg></div>
-          <h3>Personalized Quotes</h3>
-          <p>Wisdom from history's greatest minds, selected based on your interests and current thinking</p>
-        </div>
-        <div class="feature">
-          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-          <h3>Multi-Engine Search</h3>
-          <p>Search with Google, Perplexity, Claude, ChatGPT, and more — all from one elegant interface</p>
-        </div>
-        <div class="feature">
-          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <div class="feature reveal">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
           <h3>Private by Default</h3>
-          <p>Theme extraction and quote matching run locally. Optional BYOK features use your own API keys.</p>
+          <p>Your data stays on your device. We don't track your browsing or collect your conversations.</p>
         </div>
-        <div class="feature">
-          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></div>
-          <h3>Works Offline</h3>
-          <p>Quotes are cached locally so wisdom is always available, even without internet</p>
+        <div class="feature reveal">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <h3>Zero Latency</h3>
+          <p>Quotes are cached locally, so your new tab loads instantly without waiting for a network request.</p>
         </div>
-        <div class="feature">
-          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></div>
-          <h3>Light & Dark Mode</h3>
-          <p>Seamlessly adapts to your system preference for a comfortable viewing experience</p>
+        <div class="feature reveal">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          </div>
+          <h3>Dark Mode Support</h3>
+          <p>Automatically adapts to your system theme to be easy on your eyes, day or night.</p>
         </div>
-        <div class="feature">
-          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-          <h3>Silent & Fast</h3>
-          <p>Syncs seamlessly in the background without interrupting your workflow</p>
-        </div>
-        <div class="feature">
-          <div class="feature-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 12l8-4"/></svg></div>
-          <h3>Smart Reasons</h3>
-          <p>Optional BYOK explanations that tell you why each quote is relevant to you</p>
+        <div class="feature reveal">
+          <div class="feature-icon">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          </div>
+          <h3>BYOK Intelligence</h3>
+          <p>Connect your own API keys for "Smart Reasons" that explain exactly why a quote was chosen for you.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Privacy -->
-  <section id="privacy" class="privacy">
+  <!-- Testimonials -->
+  <section class="testimonials">
     <div class="container">
-      <div class="privacy-content">
-        <h2 class="section-title">Private by Default</h2>
-        <p class="section-subtitle">Theme extraction and quote matching run entirely on your device. BYOK intelligence is optional.</p>
-        <div class="privacy-badge reveal">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            <path d="M9 12l2 2 4-4"/>
-          </svg>
-          Your data stays on your device
+      <h2 class="section-title">What Users Say</h2>
+      <div class="testimonial-grid">
+        <div class="testimonial reveal">
+          <p class="testimonial-text">"Finally, a new tab extension that actually respects my privacy. I love seeing quotes that match what I was just working on."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">S</div>
+            <div class="author-info">
+              <div>Sarah J.</div>
+              <div>Software Engineer</div>
+            </div>
+          </div>
         </div>
-        <div class="privacy-points">
-          <div class="privacy-point">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-            No tracking or analytics
+        <div class="testimonial reveal">
+          <p class="testimonial-text">"The local-first approach is brilliant. It feels incredibly fast and I don't have to worry about my data leaking."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">M</div>
+            <div class="author-info">
+              <div>Michael C.</div>
+              <div>Product Designer</div>
+            </div>
           </div>
-          <div class="privacy-point">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-            Fully offline capable
-          </div>
-          <div class="privacy-point">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-            Optional BYOK intelligence uses your own API keys
+        </div>
+        <div class="testimonial reveal">
+          <p class="testimonial-text">"Simple, beautiful, and smart. It helps me pause and reflect for a second before diving into the next task."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">A</div>
+            <div class="author-info">
+              <div>Alex R.</div>
+              <div>Writer</div>
+            </div>
           </div>
         </div>
       </div>
@@ -733,133 +591,55 @@
   <!-- Footer -->
   <footer>
     <div class="footer-content">
-      <div class="footer-brand">
-        <img src="icons/icon48.png" alt="musing">
-        <span>musing</span>
+      <div class="logo">
+        <img src="icons/icon48.png" alt="Musing Logo" style="width: 48px; height: 48px;">
+        <span style="font-size: 1.5rem; font-weight: 600;">musing</span>
       </div>
       <div class="footer-links">
-        <a href="/privacy">Privacy</a>
-        <a href="/terms">Terms</a>
+        <a href="/privacy.html">Privacy Policy</a>
+        <a href="/terms.html">Terms of Service</a>
+        <a href="https://github.com/yourusername/musing" target="_blank">GitHub</a>
       </div>
-      <div class="footer-social">
-        <a href="https://musing.wiki" target="_blank" title="Website">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="2" y1="12" x2="22" y2="12"></line>
-            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-          </svg>
-        </a>
-        <a href="https://x.com/pghqdev" target="_blank" title="X (Twitter)">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-          </svg>
-        </a>
-      </div>
+      <p>&copy; 2026 Musing. Built in Japan with quiet contemplation.</p>
     </div>
-    <p class="copyright">&copy; 2026 Musing. 🇯🇵 Built in Japan with quiet contemplation.</p>
   </footer>
 
+  <script src="ab-test.js"></script>
   <script>
-    // Rotating quotes for the hero section
+    // Intersection Observer for scroll animations
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Dynamic Quote in Mockup
     const quotes = [
       { text: "The only true wisdom is in knowing you know nothing.", author: "Socrates" },
       { text: "In the middle of difficulty lies opportunity.", author: "Albert Einstein" },
-      { text: "The unexamined life is not worth living.", author: "Socrates" },
-      { text: "To be yourself in a world that is constantly trying to make you something else is the greatest accomplishment.", author: "Ralph Waldo Emerson" },
-      { text: "The mind is everything. What you think you become.", author: "Buddha" },
-      { text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" }
+      { text: "The unexamined life is not worth living.", author: "Socrates" }
     ];
-
-    let currentQuoteIndex = 0;
-    const quoteText = document.getElementById('quote-text');
-    const quoteAuthor = document.getElementById('quote-author');
-
-    function typeWriter(text, element, speed = 30) {
-      return new Promise((resolve) => {
-        let i = 0;
-        element.textContent = '';
-        function type() {
-          if (i < text.length) {
-            element.textContent += text.charAt(i);
-            i++;
-            setTimeout(type, speed);
-          } else {
-            resolve();
-          }
-        }
-        type();
-      });
-    }
-
-    async function showQuote() {
-      const quote = quotes[currentQuoteIndex];
-
-      // Fade out
-      quoteText.style.opacity = '0';
-      quoteAuthor.style.opacity = '0';
-
-      await new Promise(r => setTimeout(r, 300));
-
-      // Type the quote
-      quoteText.style.opacity = '1';
-      await typeWriter(quote.text, quoteText);
-
-      // Show author
-      quoteAuthor.style.opacity = '1';
-      quoteAuthor.querySelector('span').textContent = quote.author;
-
-      // Wait before showing next quote
-      await new Promise(r => setTimeout(r, 5000));
-
-      currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
-      showQuote();
-    }
-
-    // Start quote rotation after page loads
-    window.addEventListener('load', () => {
-      setTimeout(showQuote, 1000);
-    });
-
-    // Scroll reveal animation using Intersection Observer
-    const observerOptions = {
-      root: null,
-      rootMargin: '0px',
-      threshold: 0.1
-    };
-
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry, index) => {
-        if (entry.isIntersecting) {
-          // Add staggered delay for grid items
-          const delay = entry.target.dataset.delay || 0;
-          setTimeout(() => {
-            entry.target.classList.add('visible');
-          }, delay * 100);
-        }
-      });
-    }, observerOptions);
-
-    // Observe all animated elements
-    document.querySelectorAll('.step, .feature, .reveal').forEach((el, index) => {
-      el.dataset.delay = index % 3; // Stagger within each row
-      observer.observe(el);
-    });
-
-    // Smooth scroll for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth' });
-        }
-      });
-    });
-
-    // Add CSS transitions for quote text
-    quoteText.style.transition = 'opacity 0.3s ease';
-    quoteAuthor.style.transition = 'opacity 0.3s ease';
-
+    
+    let qIndex = 0;
+    const quoteEl = document.querySelector('.mock-quote');
+    const authorEl = document.querySelector('.mock-author');
+    
+    setInterval(() => {
+      qIndex = (qIndex + 1) % quotes.length;
+      quoteEl.style.opacity = 0;
+      authorEl.style.opacity = 0;
+      
+      setTimeout(() => {
+        quoteEl.textContent = `"${quotes[qIndex].text}"`;
+        authorEl.textContent = `— ${quotes[qIndex].author}`;
+        quoteEl.style.opacity = 1;
+        authorEl.style.opacity = 1;
+      }, 500);
+    }, 5000);
   </script>
 </body>
 </html>

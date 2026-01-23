@@ -10,6 +10,7 @@
   <link rel="apple-touch-icon" href="icons/icon128.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@800&display=swap" rel="stylesheet">
   <script defer src="/a/script.js" data-website-id="891cdfa8-1db7-4ef6-81a2-0bf8cba4ddd9"></script>
   <style>
     :root {
@@ -102,6 +103,39 @@
       height: 128px;
       border-radius: 12px;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .brand-text {
+      font-family: 'Nunito', sans-serif;
+      font-weight: 800;
+      color: #fff;
+      text-shadow:
+        -2px -2px 0 #3d2914,
+        2px -2px 0 #3d2914,
+        -2px 2px 0 #3d2914,
+        2px 2px 0 #3d2914,
+        0 -2px 0 #3d2914,
+        0 2px 0 #3d2914,
+        -2px 0 0 #3d2914,
+        2px 0 0 #3d2914,
+        0 4px 6px rgba(0, 0, 0, 0.3);
+      display: inline-block;
+      transform: rotate(-2deg);
+      letter-spacing: 0.5px;
+    }
+
+    .brand-text.small {
+      font-size: 1.5rem;
+      text-shadow:
+        -1.5px -1.5px 0 #3d2914,
+        1.5px -1.5px 0 #3d2914,
+        -1.5px 1.5px 0 #3d2914,
+        1.5px 1.5px 0 #3d2914,
+        0 -1.5px 0 #3d2914,
+        0 1.5px 0 #3d2914,
+        -1.5px 0 0 #3d2914,
+        1.5px 0 0 #3d2914,
+        0 3px 4px rgba(0, 0, 0, 0.3);
     }
 
     .tagline {
@@ -450,7 +484,7 @@
         <img src="icons/icon128.png" alt="Musing Logo">
       </div>
       <h1 class="tagline">let the wisdom of the past guide your present</h1>
-      <p class="subtitle">musing transforms your new tab into a personalized sanctuary of timeless quotes — local by default, with optional BYOK intelligence.</p>
+      <p class="subtitle"><span class="brand-text">musing</span> transforms your new tab into a personalized sanctuary of timeless quotes — local by default, with optional BYOK intelligence.</p>
       
       <a href="https://chromewebstore.google.com/detail/musing/hkfpdamehcnbhfeilamlbeabgdlgnjfk" class="cta-button">
         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -608,7 +642,7 @@
     <div class="footer-content">
       <div class="logo">
         <img src="icons/icon48.png" alt="Musing Logo" style="width: 48px; height: 48px;">
-        <span style="font-size: 1.5rem; font-weight: 600;">musing</span>
+        <span class="brand-text small">musing</span>
       </div>
       <div class="footer-links">
         <a href="/privacy.html">Privacy Policy</a>

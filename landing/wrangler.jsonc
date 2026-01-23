@@ -1,6 +1,7 @@
 {
   "name": "musing-landing",
   "compatibility_date": "2026-01-20",
+  "main": "worker.js",
   "assets": {
     "directory": "./"
   }

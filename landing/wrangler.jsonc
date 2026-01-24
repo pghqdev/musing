@@ -4,5 +4,8 @@
   "main": "worker.js",
   "assets": {
     "directory": "./"
-  }
+  },
+  "kv_namespaces": [
+    { "binding": "musing_waitlist", "id": "30051d34cdd34de688ff7334335a580c" }
+  ]
 }

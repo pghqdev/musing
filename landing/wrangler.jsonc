@@ -1,5 +1,5 @@
 {
-  "name": "musing-landing",
+  "name": "musing",
   "compatibility_date": "2026-01-20",
   "main": "worker.js",
   "assets": {

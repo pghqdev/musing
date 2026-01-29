@@ -13,41 +13,6 @@
   const SHOWN_QUOTES_HISTORY_KEY = "shown_quotes_history";
   const BLOCKED_THEMES_KEY = "blocked_themes";
   const DAILY_QUOTE_KEY = "daily_quote_state";
-  const SEARCH_URLS = {
-    google: "https://www.google.com/search?q=",
-    duckduckgo: "https://duckduckgo.com/?q=",
-    perplexity: "https://www.perplexity.ai/search?q=",
-    chatgpt: "https://chatgpt.com/?q=",
-    claude: "https://claude.ai/new?q=",
-    gemini: "https://gemini.google.com/app?q=",
-    wolfram: "https://www.wolframalpha.com/input?i=",
-    github: "https://github.com/search?q=",
-    namecheap: "https://www.namecheap.com/domains/registration/results/?domain=",
-  };
-
-  const ENGINE_NAMES = {
-    google: "Google",
-    duckduckgo: "DuckDuckGo",
-    perplexity: "Perplexity",
-    chatgpt: "ChatGPT",
-    claude: "Claude",
-    gemini: "Gemini",
-    wolfram: "Wolfram Alpha",
-    github: "GitHub",
-    namecheap: "Namecheap",
-  };
-
-  const ENGINE_ICONS = {
-    google: "../icons/engines/google.png",
-    duckduckgo: "../icons/engines/duckduckgo.png",
-    perplexity: "../icons/engines/perplexity.png",
-    chatgpt: "../icons/engines/chatgpt.png",
-    claude: "../icons/engines/claude.png",
-    gemini: "../icons/engines/gemini.png",
-    wolfram: "../icons/engines/wolfram.png",
-    github: "../icons/engines/github.png",
-    namecheap: "../icons/engines/namecheap.png",
-  };
 
   // Contextual reasons for each theme - explains why a quote was recommended
   const THEME_REASONS = {
@@ -87,10 +52,6 @@
     fear: "you're confronting fears",
   };
 
-  const SEARCH_ENGINES = ["google", "duckduckgo", "perplexity"];
-  const AI_PLATFORMS = ["chatgpt", "claude", "gemini"];
-  const TOOLS = ["wolfram", "github", "namecheap"];
-
   // Version changelog - keyed by version number
   // Add entries when releasing new versions
   const VERSION_CHANGELOG = {
@@ -121,20 +82,12 @@
   const authorEl = document.getElementById("author");
   const reasonEl = document.getElementById("recommendation-reason");
   const containerEl = document.getElementById("container");
-  const searchEl = document.getElementById("search");
   const refreshEl = document.getElementById("refresh");
   const loadingEl = document.getElementById("loading-indicator");
-  const engineSelectorEl = document.getElementById("engine-selector");
-  const engineIconEl = document.getElementById("engine-icon");
-  const engineDropdownEl = document.getElementById("engine-dropdown");
   const toastEl = document.getElementById("toast");
   const copyQuoteEl = document.getElementById("copy-quote");
   const favoriteQuoteEl = document.getElementById("favorite-quote");
   const favoriteQuoteLabelEl = document.getElementById("favorite-quote-label");
-  const openHistoryEl = document.getElementById("open-history");
-  const historyEl = document.getElementById("history");
-  const historyListEl = document.getElementById("history-list");
-  const historyCloseEl = document.getElementById("history-close");
   const themeChipsEl = document.getElementById("theme-chips");
 
   // Notification elements
@@ -153,9 +106,7 @@
   const whatsNewListEl = document.getElementById("whats-new-list");
   const whatsNewCloseBtnEl = document.getElementById("whats-new-close");
 
-  let searchEngine = "google";
   let isInitialized = false;
-  let dropdownOpen = false;
   let currentNotification = null;
   let currentQuote = null;
   let toastTimeout = null;
@@ -309,72 +260,6 @@
     } catch {
       // ignore
     }
-  }
-
-  function formatTimeAgo(timestamp) {
-    const diffMs = Date.now() - timestamp;
-    const mins = Math.floor(diffMs / 60000);
-    if (mins < 1) return "just now";
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  }
-
-  async function openHistory() {
-    if (!historyEl || !historyListEl) return;
-    const { [SHOWN_QUOTES_HISTORY_KEY]: history = [] } = await chrome.storage.local.get(SHOWN_QUOTES_HISTORY_KEY);
-    const items = (Array.isArray(history) ? history : []).slice(0, 60);
-    historyListEl.replaceChildren();
-
-    if (items.length === 0) {
-      const empty = document.createElement("div");
-      empty.style.padding = "1rem";
-      empty.style.textAlign = "center";
-      empty.style.color = "inherit";
-      empty.style.opacity = "0.7";
-      empty.textContent = "No history yet";
-      historyListEl.appendChild(empty);
-    } else {
-      items.forEach((item) => {
-        const row = document.createElement("div");
-        row.className = "history-item";
-        row.tabIndex = 0;
-
-        const text = document.createElement("div");
-        text.className = "history-item-text";
-        text.textContent = item.text || "";
-        row.appendChild(text);
-
-        const meta = document.createElement("div");
-        meta.className = "history-item-meta";
-        const author = document.createElement("span");
-        author.textContent = item.author || "";
-        const time = document.createElement("span");
-        time.textContent = item.shownAt ? formatTimeAgo(item.shownAt) : "";
-        meta.appendChild(author);
-        meta.appendChild(time);
-        row.appendChild(meta);
-
-        const open = () => {
-          displayQuote(item);
-          closeHistory();
-        };
-        row.addEventListener("click", open);
-        row.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") open();
-        });
-
-        historyListEl.appendChild(row);
-      });
-    }
-
-    historyEl.classList.add("show");
-  }
-
-  function closeHistory() {
-    if (historyEl) historyEl.classList.remove("show");
   }
 
   async function loadBlockedThemes() {
@@ -540,186 +425,12 @@
   }
 
   /**
-   * Handle search
-   */
-  function handleSearch(event) {
-    if (event.key === "Enter") {
-      const query = searchEl.value.trim();
-      if (query) {
-        let targetUrl;
-
-        // Check if it looks like a URL
-        if (query.includes(".") && !query.includes(" ")) {
-          // Block dangerous protocols
-          const lowerQuery = query.toLowerCase();
-          if (lowerQuery.startsWith("javascript:") || lowerQuery.startsWith("data:") || lowerQuery.startsWith("vbscript:")) {
-            return;
-          }
-          targetUrl = query.startsWith("http://") || query.startsWith("https://") ? query : `https://${query}`;
-        } else {
-          const searchUrl = SEARCH_URLS[searchEngine] || SEARCH_URLS.google;
-          targetUrl = `${searchUrl}${encodeURIComponent(query)}`;
-        }
-
-        // Validate URL before navigation
-        try {
-          const parsed = new URL(targetUrl);
-          if (parsed.protocol === "https:" || parsed.protocol === "http:") {
-            window.location.href = targetUrl;
-          }
-        } catch {
-          // Invalid URL, ignore
-        }
-      }
-    }
-  }
-
-  /**
-   * Update search placeholder
-   */
-  function updateSearchPlaceholder() {
-    searchEl.placeholder = `Search ${ENGINE_NAMES[searchEngine] || "Google"}...`;
-  }
-
-  /**
-   * Update engine icon in selector
-   */
-  function updateEngineIcon() {
-    engineIconEl.src = ENGINE_ICONS[searchEngine] || ENGINE_ICONS.google;
-    engineIconEl.alt = ENGINE_NAMES[searchEngine] || "Google";
-  }
-
-  /**
-   * Render dropdown options
-   */
-  function renderDropdown() {
-    const createOption = (key) => {
-      const option = document.createElement("div");
-      option.className = `engine-option${searchEngine === key ? " selected" : ""}`;
-      option.dataset.engine = key;
-
-      const img = document.createElement("img");
-      img.className = "engine-option-icon";
-      img.src = ENGINE_ICONS[key];
-      img.alt = "";
-      option.appendChild(img);
-
-      const span = document.createElement("span");
-      span.className = "engine-option-name";
-      span.textContent = ENGINE_NAMES[key];
-      option.appendChild(span);
-
-      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.setAttribute("class", "engine-option-check");
-      svg.setAttribute("viewBox", "0 0 24 24");
-      svg.setAttribute("fill", "none");
-      svg.setAttribute("stroke", "currentColor");
-      svg.setAttribute("stroke-width", "2.5");
-      svg.setAttribute("stroke-linecap", "round");
-      svg.setAttribute("stroke-linejoin", "round");
-      const polyline = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
-      polyline.setAttribute("points", "20 6 9 17 4 12");
-      svg.appendChild(polyline);
-      option.appendChild(svg);
-
-      option.addEventListener("click", () => selectEngine(key));
-      return option;
-    };
-
-    engineDropdownEl.replaceChildren();
-
-    // Search engines section
-    const searchLabel = document.createElement("div");
-    searchLabel.className = "engine-section-label";
-    searchLabel.textContent = "Search";
-    engineDropdownEl.appendChild(searchLabel);
-
-    SEARCH_ENGINES.forEach((key) => {
-      engineDropdownEl.appendChild(createOption(key));
-    });
-
-    // Divider
-    const divider = document.createElement("div");
-    divider.className = "engine-divider";
-    engineDropdownEl.appendChild(divider);
-
-    // AI platforms section
-    const aiLabel = document.createElement("div");
-    aiLabel.className = "engine-section-label";
-    aiLabel.textContent = "AI";
-    engineDropdownEl.appendChild(aiLabel);
-
-    AI_PLATFORMS.forEach((key) => {
-      engineDropdownEl.appendChild(createOption(key));
-    });
-
-    // Tools section
-    const toolsDivider = document.createElement("div");
-    toolsDivider.className = "engine-divider";
-    engineDropdownEl.appendChild(toolsDivider);
-
-    const toolsLabel = document.createElement("div");
-    toolsLabel.className = "engine-section-label";
-    toolsLabel.textContent = "Tools";
-    engineDropdownEl.appendChild(toolsLabel);
-
-    TOOLS.forEach((key) => {
-      engineDropdownEl.appendChild(createOption(key));
-    });
-  }
-
-  /**
-   * Toggle dropdown open/close
-   */
-  function toggleDropdown() {
-    dropdownOpen = !dropdownOpen;
-    engineDropdownEl.classList.toggle("open", dropdownOpen);
-    engineSelectorEl.classList.toggle("open", dropdownOpen);
-    engineSelectorEl.setAttribute("aria-expanded", dropdownOpen ? "true" : "false");
-  }
-
-  /**
-   * Close dropdown
-   */
-  function closeDropdown() {
-    if (dropdownOpen) {
-      dropdownOpen = false;
-      engineDropdownEl.classList.remove("open");
-      engineSelectorEl.classList.remove("open");
-      engineSelectorEl.setAttribute("aria-expanded", "false");
-    }
-  }
-
-  /**
-   * Select a search engine
-   */
-  async function selectEngine(key) {
-    if (searchEngine !== key) {
-      searchEngine = key;
-      updateSearchPlaceholder();
-      updateEngineIcon();
-      renderDropdown();
-
-      // Save preference
-      const { [SETTINGS_KEY]: settings = {} } = await chrome.storage.local.get(SETTINGS_KEY);
-      settings.searchEngine = key;
-      await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
-    }
-    closeDropdown();
-    searchEl.focus();
-  }
-
-  /**
    * Load settings
    */
   async function loadSettings() {
     const { [SETTINGS_KEY]: settings = {} } = await chrome.storage.local.get(SETTINGS_KEY);
-    searchEngine = settings.searchEngine || "google";
     dailyQuoteEnabled = settings.dailyQuoteEnabled ?? false;
     showThemeChips = settings.showThemeChips ?? true;
-    updateSearchPlaceholder();
-    updateEngineIcon();
-    renderDropdown();
     if (currentQuote) {
       renderThemeChips(currentQuote);
     }
@@ -739,13 +450,6 @@
     chrome.storage.onChanged.addListener((changes, areaName) => {
       if (areaName === "local" && changes[SETTINGS_KEY]) {
         const newSettings = changes[SETTINGS_KEY].newValue || {};
-        if (newSettings.searchEngine && newSettings.searchEngine !== searchEngine) {
-          searchEngine = newSettings.searchEngine;
-          updateSearchPlaceholder();
-          updateEngineIcon();
-          renderDropdown();
-          console.log("[Musing] Search engine updated to:", searchEngine);
-        }
         dailyQuoteEnabled = newSettings.dailyQuoteEnabled ?? dailyQuoteEnabled;
         showThemeChips = newSettings.showThemeChips ?? showThemeChips;
         if (currentQuote) {
@@ -786,43 +490,10 @@
   }
 
   // Event listeners
-  searchEl.addEventListener("keydown", handleSearch);
   refreshEl.addEventListener("click", handleRefresh);
   document.addEventListener("visibilitychange", handleVisibilityChange);
-  engineSelectorEl.addEventListener("click", toggleDropdown);
   if (copyQuoteEl) copyQuoteEl.addEventListener("click", copyCurrentQuote);
   if (favoriteQuoteEl) favoriteQuoteEl.addEventListener("click", toggleFavorite);
-  if (openHistoryEl) openHistoryEl.addEventListener("click", openHistory);
-  if (historyCloseEl) historyCloseEl.addEventListener("click", closeHistory);
-  if (historyEl) {
-    historyEl.addEventListener("click", (e) => {
-      if (e.target === historyEl) {
-        closeHistory();
-      }
-    });
-  }
-
-  // Close dropdown when clicking outside
-  document.addEventListener("click", (e) => {
-    if (!engineSelectorEl.contains(e.target) && !engineDropdownEl.contains(e.target)) {
-      closeDropdown();
-    }
-  });
-
-  // Close dropdown on escape
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && dropdownOpen) {
-      closeDropdown();
-      searchEl.focus();
-    }
-  });
-
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && historyEl && historyEl.classList.contains("show")) {
-      closeHistory();
-      searchEl.focus();
-    }
-  });
 
   // ============ Notifications ============
 
@@ -968,7 +639,6 @@
   function handleWhatsNewClose() {
     hideWhatsNewModal();
     dismissCurrentNotification();
-    searchEl.focus();
   }
 
   // Notification event listeners
@@ -1013,7 +683,6 @@
   async function completeOnboarding() {
     await chrome.storage.local.set({ [ONBOARDING_KEY]: true });
     onboardingEl.classList.remove("show");
-    searchEl.focus();
   }
 
   /**

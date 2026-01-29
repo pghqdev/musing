@@ -13,7 +13,6 @@ const BLOCKED_THEMES_KEY = "blocked_themes";
 const FAVORITES_KEY = "favorite_quotes";
 
 const DEFAULTS = {
-  searchEngine: "google",
   enableClaude: true,
   enableChatGPT: true,
   enableGemini: true,
@@ -73,7 +72,6 @@ const PROVIDER_MODELS = {
 };
 
 // Settings tab elements
-const searchEngineEl = document.getElementById("search-engine");
 const enableClaudeEl = document.getElementById("enable-claude");
 const enableChatGPTEl = document.getElementById("enable-chatgpt");
 const enableGeminiEl = document.getElementById("enable-gemini");
@@ -156,7 +154,6 @@ const tabContents = document.querySelectorAll(".tab-content");
 async function loadSettings() {
   const { [SETTINGS_KEY]: settings = DEFAULTS } = await chrome.storage.local.get(SETTINGS_KEY);
 
-  searchEngineEl.value = settings.searchEngine || DEFAULTS.searchEngine;
   enableClaudeEl.checked = settings.enableClaude ?? DEFAULTS.enableClaude;
   enableChatGPTEl.checked = settings.enableChatGPT ?? DEFAULTS.enableChatGPT;
   enableGeminiEl.checked = settings.enableGemini ?? DEFAULTS.enableGemini;
@@ -170,7 +167,6 @@ async function loadSettings() {
  */
 async function saveSettings() {
   const settings = {
-    searchEngine: searchEngineEl.value,
     enableClaude: enableClaudeEl.checked,
     enableChatGPT: enableChatGPTEl.checked,
     enableGemini: enableGeminiEl.checked,
@@ -940,7 +936,6 @@ function hideRawDataModal() {
 }
 
 // Event listeners - Settings
-searchEngineEl.addEventListener("change", saveSettings);
 enableClaudeEl.addEventListener("change", saveSettings);
 enableChatGPTEl.addEventListener("change", saveSettings);
 enableGeminiEl.addEventListener("change", saveSettings);

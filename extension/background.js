@@ -96,7 +96,6 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     if (!settings || typeof settings !== "object") {
       await chrome.storage.local.set({
         [SETTINGS_KEY]: {
-          searchEngine: "google",
           enableClaude: true,
           enableChatGPT: true,
           enableGemini: true,

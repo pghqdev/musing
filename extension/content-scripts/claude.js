@@ -6,13 +6,10 @@
 (function () {
   "use strict";
 
-  const SETTINGS_KEY = "musing_settings";
-  const SCRAPE_LOG_KEY = "scrape_log";
   const SCRAPE_INTERVAL_MS = 30000; // 30 seconds
   const MAX_TEXT_LENGTH = 5000;
   const DEBOUNCE_MS = 2500; // Increased from 1s to 2.5s
   const MIN_UPDATE_INTERVAL_MS = 5000; // Minimum 5s between updates
-  const MAX_LOG_ENTRIES = 20;
 
   let lastScrapedText = "";
   let lastUpdateTime = 0;
@@ -26,8 +23,8 @@
    * Check if Claude scraping is enabled
    */
   async function checkEnabled() {
-    const { [SETTINGS_KEY]: settings = {} } = await chrome.storage.local.get(SETTINGS_KEY);
-    isEnabled = settings.enableClaude ?? true;
+    const settings = await Store.settings.get();
+    isEnabled = settings.enableClaude;
     return isEnabled;
   }
 
@@ -237,18 +234,13 @@
    */
   async function logScrape(text) {
     try {
-      const { [SCRAPE_LOG_KEY]: logs = [] } = await chrome.storage.local.get(SCRAPE_LOG_KEY);
-
-      const newLog = {
+      await Store.scrape.appendLog({
         source: "claude",
         timestamp: Date.now(),
         preview: text.slice(0, 200),
         length: text.length,
         url: window.location.href,
-      };
-
-      const updatedLogs = [newLog, ...logs].slice(0, MAX_LOG_ENTRIES);
-      await chrome.storage.local.set({ [SCRAPE_LOG_KEY]: updatedLogs });
+      });
     } catch (error) {
       console.log("[Musing] Failed to log scrape:", error);
     }

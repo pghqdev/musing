@@ -7,7 +7,6 @@
   "use strict";
 
   const MUSING_MESSAGE_TYPE = "MUSING_API_CAPTURE";
-  const SETTINGS_KEY = "musing_settings";
 
   let isEnabled = true;
 
@@ -16,8 +15,8 @@
    */
   async function checkEnabled() {
     try {
-      const { [SETTINGS_KEY]: settings = {} } = await chrome.storage.local.get(SETTINGS_KEY);
-      isEnabled = settings.enableApiCapture ?? true;
+      const settings = await Store.settings.get();
+      isEnabled = settings.enableApiCapture;
       return isEnabled;
     } catch {
       return true;

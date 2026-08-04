@@ -2,49 +2,6 @@
  * Popup Script
  */
 
-const SETTINGS_KEY = "musing_settings";
-const AI_SETTINGS_KEY = "ai_settings";
-const NOTIFICATION_SETTINGS_KEY = "notification_settings";
-const LAST_SYNC_KEY = "last_sync_timestamp";
-const CONVERSATIONS_KEY = "recent_conversations";
-const QUOTES_KEY = "cached_quotes";
-const SCRAPE_LOG_KEY = "scrape_log";
-const BLOCKED_THEMES_KEY = "blocked_themes";
-const FAVORITES_KEY = "favorite_quotes";
-
-const DEFAULTS = {
-  enableClaude: true,
-  enableChatGPT: true,
-  enableGemini: true,
-  dailyQuoteEnabled: false,
-  showThemeChips: true,
-  proactiveScrapeEnabled: false,
-};
-
-const AI_DEFAULTS = {
-  aiEnabled: false,
-  aiProvider: "groq",
-  aiModel: "llama-3.3-70b-versatile",
-  aiApiKeys: {
-    groq: "",
-    claude: "",
-    openai: "",
-  },
-};
-
-const NOTIFICATION_DEFAULTS = {
-  showUpdateNotifications: true,
-  showPromotions: true,
-};
-
-const HISTORY_SETTINGS_KEY = "history_settings";
-const HISTORY_DEFAULTS = {
-  enableBrowserHistory: false,
-  enableGoogleSearchHistory: false,
-  historyDaysBack: 7,
-  excludedDomains: [],
-};
-
 // Pagination constants
 const LOGS_PER_PAGE = 10;
 
@@ -152,30 +109,30 @@ const tabContents = document.querySelectorAll(".tab-content");
  * Load settings from storage
  */
 async function loadSettings() {
-  const { [SETTINGS_KEY]: settings = DEFAULTS } = await chrome.storage.local.get(SETTINGS_KEY);
+  const settings = await Store.settings.get();
 
-  enableClaudeEl.checked = settings.enableClaude ?? DEFAULTS.enableClaude;
-  enableChatGPTEl.checked = settings.enableChatGPT ?? DEFAULTS.enableChatGPT;
-  enableGeminiEl.checked = settings.enableGemini ?? DEFAULTS.enableGemini;
-  dailyQuoteEl.checked = settings.dailyQuoteEnabled ?? DEFAULTS.dailyQuoteEnabled;
-  showThemeChipsEl.checked = settings.showThemeChips ?? DEFAULTS.showThemeChips;
-  proactiveScrapeEl.checked = settings.proactiveScrapeEnabled ?? DEFAULTS.proactiveScrapeEnabled;
+  enableClaudeEl.checked = settings.enableClaude;
+  enableChatGPTEl.checked = settings.enableChatGPT;
+  enableGeminiEl.checked = settings.enableGemini;
+  dailyQuoteEl.checked = settings.dailyQuoteEnabled;
+  showThemeChipsEl.checked = settings.showThemeChips;
+  proactiveScrapeEl.checked = settings.proactiveScrapeEnabled;
 }
 
 /**
  * Save settings to storage
  */
 async function saveSettings() {
-  const settings = {
+  const existing = await Store.settings.get();
+  await Store.settings.set({
+    ...existing,
     enableClaude: enableClaudeEl.checked,
     enableChatGPT: enableChatGPTEl.checked,
     enableGemini: enableGeminiEl.checked,
     dailyQuoteEnabled: dailyQuoteEl.checked,
     showThemeChips: showThemeChipsEl.checked,
     proactiveScrapeEnabled: proactiveScrapeEl.checked,
-  };
-
-  await chrome.storage.local.set({ [SETTINGS_KEY]: settings });
+  });
   showStatus("Saved", "success");
 }
 
@@ -183,21 +140,14 @@ async function saveSettings() {
  * Load AI settings from storage
  */
 async function loadAiSettings() {
-  const { [AI_SETTINGS_KEY]: aiSettings = AI_DEFAULTS } = await chrome.storage.local.get(AI_SETTINGS_KEY);
+  // Store.ai.get() merges defaults and migrates the legacy single-key format
+  const aiSettings = await Store.ai.get();
 
-  enableAiEl.checked = aiSettings.aiEnabled ?? AI_DEFAULTS.aiEnabled;
-  aiProviderEl.value = aiSettings.aiProvider || AI_DEFAULTS.aiProvider;
+  enableAiEl.checked = aiSettings.aiEnabled;
+  aiProviderEl.value = aiSettings.aiProvider;
 
-  // Get the current provider and load its API key
-  const currentProvider = aiSettings.aiProvider || AI_DEFAULTS.aiProvider;
-  const apiKeys = aiSettings.aiApiKeys || AI_DEFAULTS.aiApiKeys;
-
-  // Support legacy single apiKey format (migrate to per-provider)
-  if (aiSettings.aiApiKey && !aiSettings.aiApiKeys) {
-    aiApiKeyEl.value = aiSettings.aiApiKey;
-  } else {
-    aiApiKeyEl.value = apiKeys[currentProvider] || "";
-  }
+  const currentProvider = aiSettings.aiProvider;
+  aiApiKeyEl.value = aiSettings.aiApiKeys[currentProvider] || "";
 
   // Update model options and provider UI for current provider
   updateModelOptions(currentProvider);
@@ -216,27 +166,20 @@ async function loadAiSettings() {
  * Save AI settings to storage
  */
 async function saveAiSettings() {
-  // First get existing settings to preserve other provider keys
-  const { [AI_SETTINGS_KEY]: existingSettings = AI_DEFAULTS } = await chrome.storage.local.get(AI_SETTINGS_KEY);
+  // Get existing settings to preserve other provider keys
+  const existingSettings = await Store.ai.get();
 
-  // Get existing keys or initialize
-  const existingKeys = existingSettings.aiApiKeys || AI_DEFAULTS.aiApiKeys;
-
-  // Update the key for the current provider
   const currentProvider = aiProviderEl.value;
-  const updatedKeys = {
-    ...existingKeys,
-    [currentProvider]: aiApiKeyEl.value,
-  };
 
-  const aiSettings = {
+  await Store.ai.set({
     aiEnabled: enableAiEl.checked,
     aiProvider: currentProvider,
     aiModel: aiModelEl.value,
-    aiApiKeys: updatedKeys,
-  };
-
-  await chrome.storage.local.set({ [AI_SETTINGS_KEY]: aiSettings });
+    aiApiKeys: {
+      ...existingSettings.aiApiKeys,
+      [currentProvider]: aiApiKeyEl.value,
+    },
+  });
   showStatus("Saved", "success");
 }
 
@@ -275,9 +218,8 @@ async function handleProviderChange() {
   await saveAiSettings();
 
   // Load the key for the new provider
-  const { [AI_SETTINGS_KEY]: aiSettings = AI_DEFAULTS } = await chrome.storage.local.get(AI_SETTINGS_KEY);
-  const apiKeys = aiSettings.aiApiKeys || AI_DEFAULTS.aiApiKeys;
-  aiApiKeyEl.value = apiKeys[newProvider] || "";
+  const aiSettings = await Store.ai.get();
+  aiApiKeyEl.value = aiSettings.aiApiKeys[newProvider] || "";
 
   // Update UI for new provider
   updateModelOptions(newProvider);
@@ -354,23 +296,20 @@ function toggleAdvancedPanel() {
  * Load notification settings from storage
  */
 async function loadNotificationSettings() {
-  const { [NOTIFICATION_SETTINGS_KEY]: settings = NOTIFICATION_DEFAULTS } =
-    await chrome.storage.local.get(NOTIFICATION_SETTINGS_KEY);
+  const settings = await Store.notifications.getSettings();
 
-  enableUpdateNotificationsEl.checked = settings.showUpdateNotifications ?? NOTIFICATION_DEFAULTS.showUpdateNotifications;
-  enablePromotionsEl.checked = settings.showPromotions ?? NOTIFICATION_DEFAULTS.showPromotions;
+  enableUpdateNotificationsEl.checked = settings.showUpdateNotifications;
+  enablePromotionsEl.checked = settings.showPromotions;
 }
 
 /**
  * Save notification settings to storage
  */
 async function saveNotificationSettings() {
-  const settings = {
+  await Store.notifications.setSettings({
     showUpdateNotifications: enableUpdateNotificationsEl.checked,
     showPromotions: enablePromotionsEl.checked,
-  };
-
-  await chrome.storage.local.set({ [NOTIFICATION_SETTINGS_KEY]: settings });
+  });
   showStatus("Saved", "success");
 }
 
@@ -378,12 +317,11 @@ async function saveNotificationSettings() {
  * Load history settings from storage
  */
 async function loadHistorySettings() {
-  const { [HISTORY_SETTINGS_KEY]: settings = HISTORY_DEFAULTS } =
-    await chrome.storage.local.get(HISTORY_SETTINGS_KEY);
+  const settings = await Store.historySettings.get();
 
-  enableBrowserHistoryEl.checked = settings.enableBrowserHistory ?? HISTORY_DEFAULTS.enableBrowserHistory;
-  enableSearchHistoryEl.checked = settings.enableGoogleSearchHistory ?? HISTORY_DEFAULTS.enableGoogleSearchHistory;
-  historyDaysEl.value = settings.historyDaysBack ?? HISTORY_DEFAULTS.historyDaysBack;
+  enableBrowserHistoryEl.checked = settings.enableBrowserHistory;
+  enableSearchHistoryEl.checked = settings.enableGoogleSearchHistory;
+  historyDaysEl.value = settings.historyDaysBack;
 
   updateHistoryUIVisibility();
 }
@@ -392,14 +330,15 @@ async function loadHistorySettings() {
  * Save history settings to storage
  */
 async function saveHistorySettings() {
+  const existing = await Store.historySettings.get();
   const settings = {
     enableBrowserHistory: enableBrowserHistoryEl.checked,
     enableGoogleSearchHistory: enableSearchHistoryEl.checked,
     historyDaysBack: parseInt(historyDaysEl.value, 10),
-    excludedDomains: HISTORY_DEFAULTS.excludedDomains,
+    excludedDomains: existing.excludedDomains,
   };
 
-  await chrome.storage.local.set({ [HISTORY_SETTINGS_KEY]: settings });
+  await Store.historySettings.set(settings);
   showStatus("Saved", "success");
 
   // Trigger history processing if any history source is enabled
@@ -533,7 +472,7 @@ function showStatus(message = "Saved", type = "success") {
  * Load and display last sync time
  */
 async function loadLastSync() {
-  const { [LAST_SYNC_KEY]: timestamp } = await chrome.storage.local.get(LAST_SYNC_KEY);
+  const timestamp = await Store.sync.lastSyncAt();
 
   if (timestamp) {
     const date = new Date(timestamp);
@@ -602,12 +541,6 @@ function hidePrivacyModal() {
   privacyModalEl.classList.remove("show");
 }
 
-async function loadBlockedThemes() {
-  const { [BLOCKED_THEMES_KEY]: blocked = [] } = await chrome.storage.local.get(BLOCKED_THEMES_KEY);
-  const list = Array.isArray(blocked) ? blocked : [];
-  return list.map((t) => String(t).toLowerCase()).filter(Boolean);
-}
-
 function renderBlockedThemes(themes) {
   if (!blockedThemesListEl) return;
   blockedThemesListEl.replaceChildren();
@@ -642,7 +575,7 @@ function renderBlockedThemes(themes) {
 }
 
 async function refreshBlockedThemesUI() {
-  const themes = await loadBlockedThemes();
+  const themes = await Store.themes.blocked();
   renderBlockedThemes(themes);
 }
 
@@ -658,24 +591,15 @@ function closeBlockedThemesModal() {
 }
 
 async function removeBlockedTheme(theme) {
-  const normalized = String(theme || "").toLowerCase().trim();
-  if (!normalized) return;
-  const themes = await loadBlockedThemes();
-  const updated = themes.filter((t) => t !== normalized);
-  await chrome.storage.local.set({ [BLOCKED_THEMES_KEY]: updated });
+  await Store.themes.unblock(theme);
   await refreshBlockedThemesUI();
   showStatus("Saved", "success");
 }
 
 async function clearBlockedThemes() {
-  await chrome.storage.local.set({ [BLOCKED_THEMES_KEY]: [] });
+  await Store.themes.clearBlocked();
   await refreshBlockedThemesUI();
   showStatus("Cleared", "success");
-}
-
-async function loadFavorites() {
-  const { [FAVORITES_KEY]: favorites = [] } = await chrome.storage.local.get(FAVORITES_KEY);
-  return Array.isArray(favorites) ? favorites : [];
 }
 
 function renderFavorites(favorites) {
@@ -712,7 +636,7 @@ function renderFavorites(favorites) {
 }
 
 async function refreshFavoritesUI() {
-  const favorites = await loadFavorites();
+  const favorites = await Store.favorites.list();
   renderFavorites(favorites);
   if (favoritesCountEl) {
     favoritesCountEl.textContent = `${favorites.length} saved`;
@@ -731,22 +655,19 @@ function closeFavoritesModal() {
 }
 
 async function removeFavorite(id) {
-  if (!id) return;
-  const favorites = await loadFavorites();
-  const updated = favorites.filter((f) => f?.id !== id);
-  await chrome.storage.local.set({ [FAVORITES_KEY]: updated });
+  await Store.favorites.remove(id);
   await refreshFavoritesUI();
   showStatus("Saved", "success");
 }
 
 async function clearFavorites() {
-  await chrome.storage.local.set({ [FAVORITES_KEY]: [] });
+  await Store.favorites.clear();
   await refreshFavoritesUI();
   showStatus("Cleared", "success");
 }
 
 async function exportFavorites() {
-  const favorites = await loadFavorites();
+  const favorites = await Store.favorites.list();
   const payload = JSON.stringify(favorites, null, 2);
   try {
     await navigator.clipboard.writeText(payload);
@@ -778,11 +699,12 @@ function switchTab(tabName) {
  * Load and display scrape logs
  */
 async function loadLogs() {
-  const data = await chrome.storage.local.get([SCRAPE_LOG_KEY, CONVERSATIONS_KEY, QUOTES_KEY, FAVORITES_KEY]);
-  const logs = data[SCRAPE_LOG_KEY] || [];
-  const conversations = data[CONVERSATIONS_KEY] || [];
-  const quotes = data[QUOTES_KEY] || [];
-  const favorites = data[FAVORITES_KEY] || [];
+  const [logs, conversations, quotes, favorites] = await Promise.all([
+    Store.scrape.log(),
+    Store.conversations.list(),
+    Store.quotes.getCache(),
+    Store.favorites.list(),
+  ]);
 
   // Update quotes count
   quotesCountEl.textContent = `${quotes.length} quotes cached`;
@@ -907,7 +829,7 @@ async function handleClearLogs() {
     return;
   }
 
-  await chrome.storage.local.remove([SCRAPE_LOG_KEY, CONVERSATIONS_KEY, QUOTES_KEY]);
+  await Store.clearCapturedData();
   showStatus("Data cleared", "success");
 
   // Reset pagination state
@@ -922,7 +844,7 @@ async function handleClearLogs() {
  * Show raw storage data
  */
 async function handleViewRaw() {
-  const data = await chrome.storage.local.get(null);
+  const data = await Store.dumpAll();
   const maskedData = maskSensitiveData(data);
   rawDataPreEl.textContent = JSON.stringify(maskedData, null, 2);
   rawDataModalEl.classList.add("show");

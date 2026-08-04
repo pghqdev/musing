@@ -4,7 +4,6 @@
  */
 
 // Cache for AI-generated reasons to avoid duplicate API calls
-const AI_REASON_CACHE_KEY = "ai_reason_cache";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 /**
@@ -373,7 +372,7 @@ function simpleHash(str) {
  */
 async function getCachedReason(cacheKey) {
   try {
-    const { [AI_REASON_CACHE_KEY]: cache = {} } = await chrome.storage.local.get(AI_REASON_CACHE_KEY);
+    const cache = await Store.ai.getReasonCache();
     const entry = cache[cacheKey];
 
     if (entry && (Date.now() - entry.timestamp) < CACHE_TTL_MS) {
@@ -383,7 +382,7 @@ async function getCachedReason(cacheKey) {
     // Clean up expired entry
     if (entry) {
       delete cache[cacheKey];
-      await chrome.storage.local.set({ [AI_REASON_CACHE_KEY]: cache });
+      await Store.ai.setReasonCache(cache);
     }
   } catch (error) {
     console.warn("[Musing] Cache read error:", error.message);
@@ -398,7 +397,7 @@ async function getCachedReason(cacheKey) {
  */
 async function cacheReason(cacheKey, reason) {
   try {
-    const { [AI_REASON_CACHE_KEY]: cache = {} } = await chrome.storage.local.get(AI_REASON_CACHE_KEY);
+    const cache = await Store.ai.getReasonCache();
 
     // Limit cache size to 100 entries
     const keys = Object.keys(cache);
@@ -413,7 +412,7 @@ async function cacheReason(cacheKey, reason) {
       timestamp: Date.now(),
     };
 
-    await chrome.storage.local.set({ [AI_REASON_CACHE_KEY]: cache });
+    await Store.ai.setReasonCache(cache);
   } catch (error) {
     console.warn("[Musing] Cache write error:", error.message);
   }

@@ -6,14 +6,6 @@
 (function () {
   "use strict";
 
-  const SETTINGS_KEY = "musing_settings";
-  const ONBOARDING_KEY = "onboarding_complete";
-  const QUOTES_KEY = "cached_quotes";
-  const FAVORITES_KEY = "favorite_quotes";
-  const SHOWN_QUOTES_HISTORY_KEY = "shown_quotes_history";
-  const BLOCKED_THEMES_KEY = "blocked_themes";
-  const DAILY_QUOTE_KEY = "daily_quote_state";
-
   // Contextual reasons for each theme - explains why a quote was recommended
   const THEME_REASONS = {
     programming: "you've been writing code",
@@ -164,7 +156,7 @@
     hideLoading();
     renderThemeChips(quote);
     updateFavoriteButtonState();
-    addToShownQuoteHistory(quote);
+    Store.history.recordShown(quote);
   }
 
   function showToast(message) {
@@ -204,15 +196,9 @@
     }
   }
 
-  async function loadFavorites() {
-    const { [FAVORITES_KEY]: favorites = [] } = await chrome.storage.local.get(FAVORITES_KEY);
-    return Array.isArray(favorites) ? favorites : [];
-  }
-
   async function updateFavoriteButtonState() {
     if (!favoriteQuoteEl || !currentQuote?.id) return;
-    const favorites = await loadFavorites();
-    const isFavorited = favorites.some((q) => q.id === currentQuote.id);
+    const isFavorited = await Store.favorites.isFavorite(currentQuote.id);
     favoriteQuoteEl.classList.toggle("selected", isFavorited);
     favoriteQuoteEl.setAttribute("aria-pressed", isFavorited ? "true" : "false");
     if (favoriteQuoteLabelEl) {
@@ -222,60 +208,13 @@
 
   async function toggleFavorite() {
     if (!currentQuote || !currentQuote.id) return;
-    const favorites = await loadFavorites();
-    const existingIndex = favorites.findIndex((q) => q.id === currentQuote.id);
-    if (existingIndex >= 0) {
-      favorites.splice(existingIndex, 1);
-      await chrome.storage.local.set({ [FAVORITES_KEY]: favorites });
-      showToast("Removed");
-    } else {
-      const entry = {
-        id: currentQuote.id,
-        text: currentQuote.text,
-        author: currentQuote.author,
-        themes: currentQuote.themes || [],
-        savedAt: Date.now(),
-      };
-      const updated = [entry, ...favorites].slice(0, 200);
-      await chrome.storage.local.set({ [FAVORITES_KEY]: updated });
-      showToast("Saved");
-    }
+    const { favorited } = await Store.favorites.toggle(currentQuote);
+    showToast(favorited ? "Saved" : "Removed");
     updateFavoriteButtonState();
   }
 
-  async function addToShownQuoteHistory(quote) {
-    if (!quote?.id) return;
-    try {
-      const { [SHOWN_QUOTES_HISTORY_KEY]: history = [] } = await chrome.storage.local.get(SHOWN_QUOTES_HISTORY_KEY);
-      const normalized = Array.isArray(history) ? history : [];
-      const entry = {
-        id: quote.id,
-        text: quote.text,
-        author: quote.author,
-        themes: quote.themes || [],
-        shownAt: Date.now(),
-      };
-      const deduped = [entry, ...normalized.filter((h) => h?.id !== quote.id)].slice(0, 80);
-      await chrome.storage.local.set({ [SHOWN_QUOTES_HISTORY_KEY]: deduped });
-    } catch {
-      // ignore
-    }
-  }
-
-  async function loadBlockedThemes() {
-    const { [BLOCKED_THEMES_KEY]: blocked = [] } = await chrome.storage.local.get(BLOCKED_THEMES_KEY);
-    const list = Array.isArray(blocked) ? blocked : [];
-    return list.map((t) => String(t).toLowerCase()).filter(Boolean);
-  }
-
   async function blockTheme(theme) {
-    const normalized = String(theme || "").toLowerCase().trim();
-    if (!normalized) return;
-    const blocked = await loadBlockedThemes();
-    if (!blocked.includes(normalized)) {
-      const updated = [normalized, ...blocked].slice(0, 200);
-      await chrome.storage.local.set({ [BLOCKED_THEMES_KEY]: updated });
-    }
+    await Store.themes.block(theme);
     showToast("Less like this");
     loadQuote({ forceNew: true });
   }
@@ -287,7 +226,7 @@
     const themes = Array.isArray(quote?.matchedThemes) ? quote.matchedThemes : [];
     if (themes.length === 0) return;
 
-    loadBlockedThemes().then((blocked) => {
+    Store.themes.blocked().then((blocked) => {
       const visibleThemes = themes.map((t) => String(t)).filter((t) => t && !blocked.includes(t.toLowerCase()));
       if (visibleThemes.length === 0) return;
       visibleThemes.slice(0, 6).forEach((theme) => {
@@ -322,7 +261,7 @@
 
   async function getDailyQuoteIfAvailable() {
     if (!dailyQuoteEnabled) return null;
-    const { [DAILY_QUOTE_KEY]: state } = await chrome.storage.local.get(DAILY_QUOTE_KEY);
+    const state = await Store.quotes.getDailyState();
     if (!state || !state.dateKey || !state.quote) return null;
     if (state.dateKey !== getLocalDateKey()) return null;
     return state.quote;
@@ -330,17 +269,15 @@
 
   async function setDailyQuote(quote) {
     if (!dailyQuoteEnabled || !quote?.text) return;
-    await chrome.storage.local.set({
-      [DAILY_QUOTE_KEY]: {
-        dateKey: getLocalDateKey(),
-        quote: {
-          id: quote.id,
-          text: quote.text,
-          author: quote.author,
-          themes: quote.themes || [],
-          matchedThemes: quote.matchedThemes || null,
-          aiReason: quote.aiReason || null,
-        },
+    await Store.quotes.setDailyState({
+      dateKey: getLocalDateKey(),
+      quote: {
+        id: quote.id,
+        text: quote.text,
+        author: quote.author,
+        themes: quote.themes || [],
+        matchedThemes: quote.matchedThemes || null,
+        aiReason: quote.aiReason || null,
       },
     });
   }
@@ -368,7 +305,7 @@
    */
   async function loadQuoteFromStorage() {
     try {
-      const { [QUOTES_KEY]: quotes = [] } = await chrome.storage.local.get(QUOTES_KEY);
+      const quotes = await Store.quotes.getCache();
       if (quotes.length > 0) {
         return quotes[Math.floor(Math.random() * quotes.length)];
       }
@@ -428,9 +365,9 @@
    * Load settings
    */
   async function loadSettings() {
-    const { [SETTINGS_KEY]: settings = {} } = await chrome.storage.local.get(SETTINGS_KEY);
-    dailyQuoteEnabled = settings.dailyQuoteEnabled ?? false;
-    showThemeChips = settings.showThemeChips ?? true;
+    const settings = await Store.settings.get();
+    dailyQuoteEnabled = settings.dailyQuoteEnabled;
+    showThemeChips = settings.showThemeChips;
     if (currentQuote) {
       renderThemeChips(currentQuote);
     }
@@ -447,14 +384,11 @@
    * Listen for storage changes to update settings in real-time
    */
   function setupStorageListener() {
-    chrome.storage.onChanged.addListener((changes, areaName) => {
-      if (areaName === "local" && changes[SETTINGS_KEY]) {
-        const newSettings = changes[SETTINGS_KEY].newValue || {};
-        dailyQuoteEnabled = newSettings.dailyQuoteEnabled ?? dailyQuoteEnabled;
-        showThemeChips = newSettings.showThemeChips ?? showThemeChips;
-        if (currentQuote) {
-          renderThemeChips(currentQuote);
-        }
+    Store.settings.onChanged((newSettings) => {
+      dailyQuoteEnabled = newSettings.dailyQuoteEnabled;
+      showThemeChips = newSettings.showThemeChips;
+      if (currentQuote) {
+        renderThemeChips(currentQuote);
       }
     });
   }
@@ -681,7 +615,7 @@
    * Complete onboarding
    */
   async function completeOnboarding() {
-    await chrome.storage.local.set({ [ONBOARDING_KEY]: true });
+    await Store.onboarding.markDone();
     onboardingEl.classList.remove("show");
   }
 
@@ -689,8 +623,7 @@
    * Check and show onboarding if needed
    */
   async function checkOnboarding() {
-    const { [ONBOARDING_KEY]: complete } = await chrome.storage.local.get(ONBOARDING_KEY);
-    if (!complete) {
+    if (!(await Store.onboarding.isDone())) {
       onboardingEl.classList.add("show");
     }
   }

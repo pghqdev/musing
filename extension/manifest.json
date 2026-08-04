@@ -52,17 +52,17 @@
   "content_scripts": [
     {
       "matches": ["https://claude.ai/*"],
-      "js": ["content-scripts/injector.js", "content-scripts/claude.js"],
+      "js": ["lib/storage.js", "content-scripts/injector.js", "content-scripts/claude.js"],
       "run_at": "document_start"
     },
     {
       "matches": ["https://chatgpt.com/*"],
-      "js": ["content-scripts/injector.js", "content-scripts/chatgpt.js"],
+      "js": ["lib/storage.js", "content-scripts/injector.js", "content-scripts/chatgpt.js"],
       "run_at": "document_start"
     },
     {
       "matches": ["https://gemini.google.com/app/*"],
-      "js": ["content-scripts/injector.js", "content-scripts/gemini.js"],
+      "js": ["lib/storage.js", "content-scripts/injector.js", "content-scripts/gemini.js"],
       "run_at": "document_start"
     }
   ],

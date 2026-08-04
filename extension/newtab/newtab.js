@@ -47,6 +47,15 @@
   // Version changelog - keyed by version number
   // Add entries when releasing new versions
   const VERSION_CHANGELOG = {
+    "1.2.0": {
+      icon: "🔧",
+      title: "What's New in v1.2.0",
+      items: [
+        { icon: "⚙️", text: "Settings now behave consistently across the popup, new tab, and background" },
+        { icon: "🔁", text: "Fixed the proactive refresh toggle acting differently than shown" },
+        { icon: "📚", text: "Daily quotes now count toward no-repeat tracking" },
+      ],
+    },
     "1.1.0": {
       icon: "✨",
       title: "What's New in v1.1.0",

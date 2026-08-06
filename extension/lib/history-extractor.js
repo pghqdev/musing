@@ -1,28 +1,8 @@
 /**
  * History Extractor
- * Extracts themes from browser history and search queries
+ * Extracts themes from browser history page titles
  * All processing happens locally - no data sent externally
  */
-
-// Search engine URL patterns for extracting queries
-const SEARCH_ENGINE_PATTERNS = {
-  google: {
-    hostPattern: /^(www\.)?google\./,
-    queryParam: "q",
-  },
-  bing: {
-    hostPattern: /^(www\.)?bing\.com/,
-    queryParam: "q",
-  },
-  duckduckgo: {
-    hostPattern: /^(www\.)?duckduckgo\.com/,
-    queryParam: "q",
-  },
-  yahoo: {
-    hostPattern: /^(www\.)?(search\.)?yahoo\.com/,
-    queryParam: "p",
-  },
-};
 
 // Domains to exclude from history processing (sensitive/personal content)
 const EXCLUDED_DOMAINS = [
@@ -66,30 +46,6 @@ function isExcludedDomain(hostname) {
 }
 
 /**
- * Extract search query from a URL
- * @param {string} urlString - The URL to parse
- * @returns {string|null} - The search query or null
- */
-function extractSearchQuery(urlString) {
-  try {
-    const url = new URL(urlString);
-    const hostname = url.hostname;
-
-    for (const [, config] of Object.entries(SEARCH_ENGINE_PATTERNS)) {
-      if (config.hostPattern.test(hostname)) {
-        const query = url.searchParams.get(config.queryParam);
-        if (query && query.trim().length > 0) {
-          return sanitizeHistoryText(query.trim());
-        }
-      }
-    }
-  } catch {
-    // Invalid URL
-  }
-  return null;
-}
-
-/**
  * Sanitize text by removing PII
  * @param {string} text - Text to sanitize
  * @returns {string}
@@ -112,7 +68,6 @@ function sanitizeHistoryText(text) {
  * Extract themes from browser history
  * @param {Object} settings - History settings
  * @param {boolean} settings.enableBrowserHistory - Extract from page titles
- * @param {boolean} settings.enableGoogleSearchHistory - Extract from search queries
  * @param {number} settings.historyDaysBack - Days of history to analyze
  * @param {string[]} settings.excludedDomains - Additional domains to exclude
  * @returns {Promise<{themes: string[], sourceCount: number}>}
@@ -120,12 +75,11 @@ function sanitizeHistoryText(text) {
 async function extractHistoryThemes(settings) {
   const {
     enableBrowserHistory = false,
-    enableGoogleSearchHistory = false,
     historyDaysBack = 7,
     excludedDomains = [],
   } = settings;
 
-  if (!enableBrowserHistory && !enableGoogleSearchHistory) {
+  if (!enableBrowserHistory) {
     return { themes: [], sourceCount: 0 };
   }
 
@@ -146,7 +100,6 @@ async function extractHistoryThemes(settings) {
 
   const allExcluded = [...EXCLUDED_DOMAINS, ...excludedDomains];
   const textForExtraction = [];
-  const searchQueries = [];
   let sourceCount = 0;
 
   for (const item of historyItems) {
@@ -163,14 +116,6 @@ async function extractHistoryThemes(settings) {
 
       sourceCount++;
 
-      // Extract search queries if enabled
-      if (enableGoogleSearchHistory) {
-        const query = extractSearchQuery(item.url);
-        if (query && query !== "[REDACTED]") {
-          searchQueries.push(query);
-        }
-      }
-
       // Extract from page titles if enabled
       if (enableBrowserHistory && item.title) {
         const sanitizedTitle = sanitizeHistoryText(item.title);
@@ -183,11 +128,8 @@ async function extractHistoryThemes(settings) {
     }
   }
 
-  // Combine search queries and titles
-  const combinedText = [
-    ...searchQueries.slice(0, 50), // Limit search queries
-    ...textForExtraction.slice(0, 100), // Limit titles
-  ].join("\n");
+  // Combine titles for theme extraction
+  const combinedText = textForExtraction.slice(0, 100).join("\n");
 
   // Use the existing theme extractor (if available)
   let themes = [];
@@ -201,7 +143,6 @@ async function extractHistoryThemes(settings) {
   return {
     themes,
     sourceCount,
-    searchQueryCount: searchQueries.length,
     titleCount: textForExtraction.length,
   };
 }
@@ -250,7 +191,6 @@ function extractSimpleKeywords(text) {
 // Export for use in background script
 if (typeof self !== "undefined") {
   self.extractHistoryThemes = extractHistoryThemes;
-  self.extractSearchQuery = extractSearchQuery;
   self.sanitizeHistoryText = sanitizeHistoryText;
   self.isExcludedDomain = isExcludedDomain;
 }

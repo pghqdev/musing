@@ -60,7 +60,6 @@ const Store = (() => {
 
   const HISTORY_SETTINGS_DEFAULTS = {
     enableBrowserHistory: false,
-    enableGoogleSearchHistory: false,
     historyDaysBack: 7,
     excludedDomains: [],
   };

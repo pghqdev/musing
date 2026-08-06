@@ -17,7 +17,6 @@
 >
 > **Features**:
 > • Beautiful, minimal new tab with inspirational quotes
-> • Multiple search engines (Google, DuckDuckGo, Wolfram Alpha, GitHub)
 > • Works with Claude, ChatGPT, and Gemini
 > • Zero data collection - everything stays on your device
 

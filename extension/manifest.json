@@ -2,14 +2,13 @@
   "manifest_version": 3,
   "name": "musing — personalized new tab quotes",
   "short_name": "musing",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Personalized quotes on every new tab, matched to your AI conversations. 100% private — everything runs locally in your browser.",
   "homepage_url": "https://musing.wiki",
   "minimum_chrome_version": "110",
   "permissions": [
     "storage",
-    "alarms",
-    "tabs"
+    "alarms"
   ],
   "optional_permissions": [
     "history"

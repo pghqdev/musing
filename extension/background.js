@@ -229,7 +229,7 @@ async function processHistoryThemes() {
   try {
     const settings = await Store.historySettings.get();
 
-    if (!settings.enableBrowserHistory && !settings.enableGoogleSearchHistory) {
+    if (!settings.enableBrowserHistory) {
       console.log("[Musing] History processing skipped - not enabled");
       return { success: true, skipped: true };
     }
@@ -242,7 +242,6 @@ async function processHistoryThemes() {
         themes: result.themes,
         extractedAt: Date.now(),
         sourceCount: result.sourceCount,
-        searchQueryCount: result.searchQueryCount || 0,
         titleCount: result.titleCount || 0,
       });
 

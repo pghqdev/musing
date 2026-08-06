@@ -65,7 +65,6 @@ const enablePromotionsEl = document.getElementById("enable-promotions");
 
 // History settings elements
 const enableBrowserHistoryEl = document.getElementById("enable-browser-history");
-const enableSearchHistoryEl = document.getElementById("enable-search-history");
 const historyDaysEl = document.getElementById("history-days");
 const historyDaysRowEl = document.getElementById("history-days-row");
 const historyPrivacyNoteEl = document.getElementById("history-privacy-note");
@@ -320,7 +319,6 @@ async function loadHistorySettings() {
   const settings = await Store.historySettings.get();
 
   enableBrowserHistoryEl.checked = settings.enableBrowserHistory;
-  enableSearchHistoryEl.checked = settings.enableGoogleSearchHistory;
   historyDaysEl.value = settings.historyDaysBack;
 
   updateHistoryUIVisibility();
@@ -333,7 +331,6 @@ async function saveHistorySettings() {
   const existing = await Store.historySettings.get();
   const settings = {
     enableBrowserHistory: enableBrowserHistoryEl.checked,
-    enableGoogleSearchHistory: enableSearchHistoryEl.checked,
     historyDaysBack: parseInt(historyDaysEl.value, 10),
     excludedDomains: existing.excludedDomains,
   };
@@ -342,7 +339,7 @@ async function saveHistorySettings() {
   showStatus("Saved", "success");
 
   // Trigger history processing if any history source is enabled
-  if (settings.enableBrowserHistory || settings.enableGoogleSearchHistory) {
+  if (settings.enableBrowserHistory) {
     triggerHistoryProcessing();
   }
 }
@@ -351,7 +348,7 @@ async function saveHistorySettings() {
  * Update history UI visibility based on settings
  */
 function updateHistoryUIVisibility() {
-  const anyHistoryEnabled = enableBrowserHistoryEl.checked || enableSearchHistoryEl.checked;
+  const anyHistoryEnabled = enableBrowserHistoryEl.checked;
   historyDaysRowEl.style.display = anyHistoryEnabled ? "flex" : "none";
   historyPrivacyNoteEl.style.display = anyHistoryEnabled ? "block" : "none";
 }
@@ -895,7 +892,6 @@ enablePromotionsEl.addEventListener("change", saveNotificationSettings);
 
 // Event listeners - History Settings
 enableBrowserHistoryEl.addEventListener("change", () => handleHistoryToggle(enableBrowserHistoryEl, "enableBrowserHistory"));
-enableSearchHistoryEl.addEventListener("change", () => handleHistoryToggle(enableSearchHistoryEl, "enableGoogleSearchHistory"));
 historyDaysEl.addEventListener("change", saveHistorySettings);
 
 // Event listeners - Tabs

@@ -159,6 +159,7 @@
       display: inline-flex;
       align-items: center;
       gap: 12px;
+      text-decoration: none;
       background: var(--accent);
       color: #fff;
       padding: 18px 36px;
@@ -476,154 +477,6 @@
       .steps { grid-template-columns: 1fr; }
     }
 
-    /* Waitlist Modal */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(4px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.3s ease, visibility 0.3s ease;
-    }
-
-    .modal-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .modal {
-      background: var(--bg-secondary);
-      border-radius: var(--radius);
-      padding: 48px;
-      max-width: 440px;
-      width: 90%;
-      position: relative;
-      transform: scale(0.9) translateY(20px);
-      transition: transform 0.3s ease;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-    }
-
-    .modal-overlay.active .modal {
-      transform: scale(1) translateY(0);
-    }
-
-    .modal-close {
-      position: absolute;
-      top: 16px;
-      right: 16px;
-      background: none;
-      border: none;
-      color: var(--text-secondary);
-      cursor: pointer;
-      padding: 8px;
-      border-radius: 8px;
-      transition: background 0.2s ease, color 0.2s ease;
-    }
-
-    .modal-close:hover {
-      background: var(--bg-tertiary);
-      color: var(--text-primary);
-    }
-
-    .modal h2 {
-      font-size: 1.75rem;
-      margin-bottom: 12px;
-      color: var(--text-primary);
-    }
-
-    .modal p {
-      color: var(--text-secondary);
-      margin-bottom: 32px;
-      font-size: 1.1rem;
-    }
-
-    .modal-form {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .modal-form input[type="email"] {
-      padding: 16px 20px;
-      border-radius: var(--radius-sm);
-      border: 2px solid var(--bg-tertiary);
-      background: var(--bg-primary);
-      color: var(--text-primary);
-      font-size: 1rem;
-      transition: border-color 0.2s ease;
-    }
-
-    .modal-form input[type="email"]:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-
-    .modal-form input[type="email"]::placeholder {
-      color: var(--text-secondary);
-    }
-
-    .modal-form button[type="submit"] {
-      padding: 16px 24px;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: var(--radius-sm);
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: background 0.2s ease, transform 0.2s ease;
-    }
-
-    .modal-form button[type="submit"]:hover:not(:disabled) {
-      background: var(--accent-hover);
-      transform: translateY(-1px);
-    }
-
-    .modal-form button[type="submit"]:disabled {
-      opacity: 0.7;
-      cursor: not-allowed;
-    }
-
-    .modal-message {
-      text-align: center;
-      padding: 16px;
-      border-radius: var(--radius-sm);
-      font-weight: 500;
-    }
-
-    .modal-message.success {
-      background: rgba(39, 201, 63, 0.15);
-      color: #27c93f;
-    }
-
-    .modal-message.error {
-      background: rgba(255, 95, 86, 0.15);
-      color: #ff5f56;
-    }
-
-    .modal-success {
-      text-align: center;
-    }
-
-    .modal-success svg {
-      width: 64px;
-      height: 64px;
-      color: #27c93f;
-      margin-bottom: 16px;
-    }
-
-    .modal-success h2 {
-      color: var(--text-primary);
-    }
-
-    .modal-success p {
-      margin-bottom: 0;
-    }
   </style>
 </head>
 <body>
@@ -637,12 +490,12 @@
       <h1 class="tagline">let the wisdom of the past guide your present</h1>
       <p class="subtitle"><span class="brand-text">musing</span> transforms your new tab into a personalized sanctuary of timeless quotes — local by default, with optional BYOK intelligence.</p>
       
-      <button type="button" class="cta-button" id="waitlist-btn">
+      <a href="https://chromewebstore.google.com/detail/hkfpdamehcnbhfeilamlbeabgdlgnjfk" target="_blank" rel="noopener" class="cta-button">
         <svg viewBox="0 0 24 24" fill="currentColor">
           <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
         </svg>
         Add to Chrome
-      </button>
+      </a>
     </div>
 
     <!-- Visual Feature Representation (CSS Mockup) -->
@@ -803,129 +656,8 @@
     </div>
   </footer>
 
-  <!-- Waitlist Modal -->
-  <div class="modal-overlay" id="waitlist-modal">
-    <div class="modal">
-      <button class="modal-close" aria-label="Close modal">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-          <path d="M18 6L6 18M6 6l12 12"/>
-        </svg>
-      </button>
-      <div id="modal-content">
-        <h2>Join the Waitlist</h2>
-        <p>Be the first to know when <span class="brand-text small">Musing</span> launches on the Chrome Web Store.</p>
-        <form class="modal-form" id="waitlist-form">
-          <input type="email" name="email" placeholder="Enter your email" required>
-          <button type="submit">Notify Me</button>
-        </form>
-        <div class="modal-message" id="form-message" style="display: none;"></div>
-      </div>
-    </div>
-  </div>
-
   <script src="ab-test.js"></script>
   <script>
-    // Waitlist Modal
-    const modal = document.getElementById('waitlist-modal');
-    const modalBtn = document.getElementById('waitlist-btn');
-    const modalClose = modal.querySelector('.modal-close');
-    const waitlistForm = document.getElementById('waitlist-form');
-    const formMessage = document.getElementById('form-message');
-    const modalContent = document.getElementById('modal-content');
-
-    function openModal() {
-      modal.classList.add('active');
-      document.body.style.overflow = 'hidden';
-      waitlistForm.querySelector('input').focus();
-    }
-
-    function closeModal() {
-      modal.classList.remove('active');
-      document.body.style.overflow = '';
-    }
-
-    function resetForm() {
-      waitlistForm.reset();
-      formMessage.style.display = 'none';
-      formMessage.className = 'modal-message';
-    }
-
-    modalBtn.addEventListener('click', () => {
-      resetForm();
-      openModal();
-    });
-
-    modalClose.addEventListener('click', closeModal);
-
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) closeModal();
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && modal.classList.contains('active')) {
-        closeModal();
-      }
-    });
-
-    function isValidEmail(email) {
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    }
-
-    waitlistForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const submitBtn = waitlistForm.querySelector('button[type="submit"]');
-      const emailInput = waitlistForm.querySelector('input[type="email"]');
-      const email = emailInput.value.trim();
-
-      // Frontend validation
-      if (!email || !isValidEmail(email)) {
-        formMessage.textContent = 'Please enter a valid email address.';
-        formMessage.className = 'modal-message error';
-        formMessage.style.display = 'block';
-        emailInput.focus();
-        return;
-      }
-
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Joining...';
-      formMessage.style.display = 'none';
-
-      try {
-        const response = await fetch('/api/waitlist', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          modalContent.innerHTML = `
-            <div class="modal-success">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M9 12l2 2 4-4"/>
-              </svg>
-              <h2>You're on the list!</h2>
-              <p>We'll notify you when <span class="brand-text small">Musing</span> launches.</p>
-            </div>
-          `;
-        } else {
-          formMessage.textContent = data.message;
-          formMessage.className = 'modal-message error';
-          formMessage.style.display = 'block';
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Notify Me';
-        }
-      } catch (error) {
-        formMessage.textContent = 'Something went wrong. Please try again.';
-        formMessage.className = 'modal-message error';
-        formMessage.style.display = 'block';
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Notify Me';
-      }
-    });
-
     // Intersection Observer for scroll animations
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
